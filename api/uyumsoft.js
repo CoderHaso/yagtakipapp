@@ -40,6 +40,15 @@ function isoGun(s, son) {
   if (!s) return null
   return s.length === 10 ? s + (son ? 'T23:59:59' : 'T00:00:00') : s
 }
+// Uyumsoft alan adları servisten servise değişiyor (InvoiceId bazen numara,
+// DocumentId bazen ETTN). Görüntüleme/PDF uçları ETTN (GUID) ister → biçime bak.
+var GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function ettnVeNo(a, b) {
+  if (GUID.test(b || '') && !GUID.test(a || '')) return { id: b, no: a || '' }
+  if (GUID.test(a || '') && !GUID.test(b || '')) return { id: a, no: b || '' }
+  return { id: a || b, no: b && b !== a ? b : '' }
+}
+
 function el(tag, v) { return v == null || v === '' ? '' : '<' + tag + '>' + esc(v) + '</' + tag + '>' }
 
 // ── İşlemler ──
@@ -110,8 +119,8 @@ var ISLEMLER = {
     var v = find(r, 'Value')
     return {
       taslak: !!b.taslak, uuid: id, tarih: now.tarih, saat: now.saat, hesap: built.hesap,
-      belgeId: v ? v.attrs.DocumentId || id : id,
-      belgeNo: v ? v.attrs.ReceiptNumber || '' : '',
+      belgeId: v ? ettnVeNo(v.attrs.DocumentId, v.attrs.ReceiptNumber).id || id : id,
+      belgeNo: v ? ettnVeNo(v.attrs.DocumentId, v.attrs.ReceiptNumber).no : '',
       mesaj: r.attrs.Message || '',
     }
   },
@@ -141,7 +150,7 @@ var ISLEMLER = {
     var items = kids(v, 'Items').map(function (n) {
       var f = flat(n)
       return {
-        id: f.DocumentId, no: f.ReceiptNumber, tarih: f.IssueDate, durum: f.StatusEnum, durumKod: num(f.Status),
+        id: ettnVeNo(f.DocumentId, f.ReceiptNumber).id, no: ettnVeNo(f.DocumentId, f.ReceiptNumber).no, tarih: f.IssueDate, durum: f.StatusEnum, durumKod: num(f.Status),
         unvan: f.TargetTitle, tckn: f.TargetVknTckn, tutar: num(f.PayableAmount),
         brut: num(f.TaxExclusiveAmount), stopaj: num(f.StoppageTaxTotal), kesinti: num(f.TaxTotal),
         yerelId: f.LocalDocumentId || '',
@@ -203,8 +212,8 @@ var ISLEMLER = {
     return {
       taslak: !!b.taslak, uuid: id, tarih: now.tarih, saat: now.saat, hesap: built.hesap,
       senaryo: senaryo, profil: profil, etiket: etiket,
-      belgeId: v ? v.attrs.Id || id : id,
-      belgeNo: v ? v.attrs.Number || '' : '',
+      belgeId: v ? ettnVeNo(v.attrs.Id, v.attrs.Number).id || id : id,
+      belgeNo: v ? ettnVeNo(v.attrs.Id, v.attrs.Number).no : '',
       mesaj: r.attrs.Message || '',
     }
   },
@@ -236,7 +245,7 @@ var ISLEMLER = {
     var items = kids(v, 'Items').map(function (n) {
       var f = flat(n)
       return {
-        id: f.InvoiceId, no: f.DocumentId, tarih: f.ExecutionDate || f.CreateDateUtc, durum: f.Status,
+        id: ettnVeNo(f.InvoiceId, f.DocumentId).id, no: ettnVeNo(f.InvoiceId, f.DocumentId).no, tarih: f.ExecutionDate || f.CreateDateUtc, durum: f.Status,
         zarfDurum: f.EnvelopeStatus, mesaj: f.Message || '',
         unvan: f.TargetTitle, vkn: f.TargetTcknVkn, tur: f.Type, senaryo: f.Scenario || '',
         tutar: num(f.PayableAmount), kdv: num(f.TaxTotal), matrah: num(f.TaxExclusiveAmount),

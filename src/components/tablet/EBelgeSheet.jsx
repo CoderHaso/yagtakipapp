@@ -47,6 +47,7 @@ export default function EBelgeSheet(props) {
   var [hata, setHata] = useState('')
   var [sonuc, setSonuc] = useState(null)
   var [gorunum, setGorunum] = useState(null)
+  var [taslakGonder, setTaslakGonder] = useState('')   // '' | 'onay' | 'calisiyor' | 'tamam'
 
   function set(k, v) { setF(function (p) { var n = Object.assign({}, p); n[k] = v; return n }); setOnay(false) }
 
@@ -141,7 +142,19 @@ export default function EBelgeSheet(props) {
     } catch (e) { setHata(e.message) }
   }
 
+  // Taslağı bu ekrandan hemen GİB'e gönder
+  async function taslagiGonder() {
+    if (taslakGonder !== 'onay') { setTaslakGonder('onay'); return }
+    setTaslakGonder('calisiyor'); setHata('')
+    try {
+      await uyumsoft(mm ? 'mmTaslakGonder' : 'faturaTaslakGonder', { ids: [sonuc.belgeId] }, s)
+      if (props.onTaslakGonderildi) await props.onTaslakGonderildi()
+      setTaslakGonder('tamam')
+    } catch (e) { setHata(e.message); setTaslakGonder('') }
+  }
+
   var baslik = mm ? 'Müstahsil Makbuzu' : 'Satış Faturası'
+  var adimlar = props.akis ? <div className="fab-steps"><i className="on"></i><i className="on"></i><i className="on"></i></div> : null
   var birim = s.yag || 'kg'
   function inp(k, label, extra) {
     return (
@@ -159,12 +172,13 @@ export default function EBelgeSheet(props) {
         <div className="fab-sheet-head">
           <button className="fab-icon-btn" onClick={props.onClose}><Icon name="x" size={26} /></button>
           <h2>{baslik}</h2>
+          {adimlar}
         </div>
         <div className="fab-sheet-body form">
-          <div className={'eb-sonuc ' + (sonuc.taslak ? 'taslak' : 'ok')}>
-            <Icon name={sonuc.taslak ? 'folder' : 'check'} size={44} />
+          <div className={'eb-sonuc ' + (sonuc.taslak && taslakGonder !== 'tamam' ? 'taslak' : 'ok')}>
+            <Icon name={sonuc.taslak && taslakGonder !== 'tamam' ? 'folder' : 'check'} size={44} />
             <div>
-              <b>{sonuc.taslak ? 'Taslak oluşturuldu' : "GİB'e gönderildi"}</b>
+              <b>{!sonuc.taslak ? "GİB'e gönderildi" : taslakGonder === 'tamam' ? "Taslak GİB'e gönderildi" : 'Taslak kaydedildi'}</b>
               <span>
                 {sonuc.belgeNo ? 'Belge no: ' + sonuc.belgeNo : 'Belge numarası Uyumsoft tarafından verilecek'}
                 {!mm && sonuc.senaryo ? ' · ' + (sonuc.senaryo === 'eInvoice' ? 'e-Fatura (' + sonuc.profil + ')' : 'e-Arşiv') : ''}
@@ -172,11 +186,17 @@ export default function EBelgeSheet(props) {
               <span className="eb-ettn">ETTN {sonuc.uuid}</span>
             </div>
           </div>
-          {sonuc.taslak && (
-            <p className="fab-hint">
-              Taslak Uyumsoft portalında bekliyor, GİB'e gitmedi. Kontrol ettikten sonra
-              {mm ? ' Alınan Yağlar → Makbuzlar' : ' Satılan Yağlar → Giden Faturalar'} ekranından veya kartındaki düğmeyle gönderebilirsin.
-            </p>
+          {sonuc.taslak && taslakGonder !== 'tamam' && (
+            <div className="eb-taslak-kutu">
+              <p className="fab-hint">
+                Taslak Uyumsoft'ta bekliyor, GİB'e gitmedi. Şimdi gönderebilir ya da sonra
+                {mm ? ' Alınan Yağlar → Alışlar (kart) veya Müstahsil Makbuzları' : ' Satılan Yağlar → Satışlar (kart) veya Giden Faturalar'} sekmesinden gönderebilirsin.
+              </p>
+              <button className={'fab-save' + (taslakGonder === 'onay' ? ' onay' : '')} disabled={taslakGonder === 'calisiyor'} onClick={taslagiGonder}>
+                <Icon name={taslakGonder === 'onay' ? 'check' : 'arrow'} size={26} />
+                <span>{taslakGonder === 'calisiyor' ? 'GÖNDERİLİYOR…' : taslakGonder === 'onay' ? 'EMİN MİSİN? GÖNDER' : "ŞİMDİ GİB'E GÖNDER"}</span>
+              </button>
+            </div>
           )}
           <div className="eb-toplam">
             {mm ? (
@@ -211,8 +231,9 @@ export default function EBelgeSheet(props) {
       <div className="fab-sheet-head">
         <button className="fab-icon-btn" onClick={props.onClose}><Icon name="x" size={26} /></button>
         <h2>{baslik}</h2>
+        {adimlar}
         <span className="fab-sheet-sub">
-          {h.kod} · {fmt.num(Math.abs(Number(h.litre) || 0), 1)} {birim}
+          {props.akis ? '✓ Kayıt alındı · ' : ''}{h.kod} · {fmt.num(Math.abs(Number(h.litre) || 0), 1)} {birim}
           {s.efOrtam === 'test' ? ' · TEST ORTAMI' : ''}
         </span>
       </div>
@@ -304,7 +325,7 @@ export default function EBelgeSheet(props) {
           {hata && <p className="fab-hint bad">{hata}</p>}
 
           <button className="fab-btn wide" disabled={!!sorunlar.length || !!calisiyor} onClick={function () { gonder(true) }}>
-            <Icon name="folder" size={22} /> {calisiyor === 'taslak' ? 'Oluşturuluyor…' : 'Taslak oluştur'}
+            <Icon name="folder" size={22} /> {calisiyor === 'taslak' ? 'Kaydediliyor…' : "Taslak kaydet · GİB'e sonra gönder"}
           </button>
           <button className={'fab-save' + (onay ? ' onay' : '')} disabled={!!sorunlar.length || !!calisiyor} onClick={function () { gonder(false) }}>
             <Icon name={onay ? 'check' : 'arrow'} size={28} />
@@ -315,6 +336,12 @@ export default function EBelgeSheet(props) {
               ? 'Resmi belge oluşur ve GİB\'e iletilir. Tekrar dokunarak onayla.'
               : 'Taslak: Uyumsoft\'ta bekler, GİB\'e gitmez — deneme için güvenli.'}
           </p>
+          {props.akis && (
+            <button className="fab-btn wide eb-sonra" disabled={!!calisiyor} onClick={props.onClose}>
+              <Icon name="clock" size={22} /> Belgeyi sonra kes
+            </button>
+          )}
+          {props.akis && <p className="eb-not">Kayıt belgesiz kalır; kartındaki "{mm ? 'Müstahsil kes' : 'Fatura kes'}" düğmesiyle istediğin zaman kesebilirsin.</p>}
         </div>
       </div>
     </div>

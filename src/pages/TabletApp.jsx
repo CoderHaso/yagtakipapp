@@ -439,9 +439,15 @@ export default function TabletApp() {
       var id = await hareketDb.add(h)
       closeSheet()
       var ad = data.tur === 'alis' ? 'Alış' : 'Satış'
-      offerUndo(ad + ' · ' + fmt.num(data.litre, 1) + ' ' + birim + (data.resmi ? ' (resmi)' : ''), function () {
-        return hareketDb.delete(id)
-      })
+      if (data.belgeAdimi) {
+        // 3. adım: belge ekranı — taslak / GİB'e gönder / sonra
+        flash(ad + ' kaydedildi')
+        setBelgeKes(Object.assign({ id: id, _akis: true, _musteriAd: data.yeniAd || '' }, h))
+      } else {
+        offerUndo(ad + ' · ' + fmt.num(data.litre, 1) + ' ' + birim + (data.resmi ? ' (resmi)' : ''), function () {
+          return hareketDb.delete(id)
+        })
+      }
     } catch (e) { flash('Hata: ' + e.message) }
     setBusy(false)
   }
@@ -785,7 +791,12 @@ export default function TabletApp() {
         <EBelgeSheet
           tur={belgeKes.tur}
           hareket={belgeKes}
-          musteri={belgeKes.musteriId ? musteriMap[belgeKes.musteriId] : null}
+          musteri={(belgeKes.musteriId && musteriMap[belgeKes.musteriId]) || (belgeKes._musteriAd ? { ad: belgeKes._musteriAd } : null)}
+          akis={!!belgeKes._akis}
+          onTaslakGonderildi={function () {
+            var guncel = hareketler.find(function (y) { return y.id === belgeKes.id })
+            return guncel ? taslakSonrasi(guncel, 'gonder') : Promise.resolve()
+          }}
           settings={settings}
           onKaydet={function (sonuc, ek) { return kaydetBelge(belgeKes, sonuc, ek) }}
           onAyarlar={function () { setBelgeKes(null); setShowSettings(true) }}

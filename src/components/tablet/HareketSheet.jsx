@@ -37,9 +37,11 @@ export default function HareketSheet(props) {
   var mevcut = resmi ? props.stok.resmi : props.stok.gayri
   var yetersiz = !alis && litreNum > mevcut
 
-  function save() {
+  // belgeAdimi: resmi kayıtta kayıttan sonra e-belge ekranı (3. adım) açılır
+  function save(belgeAdimi) {
     if (!litreNum) return
     props.onSave({
+      belgeAdimi: resmi && belgeAdimi === true,
       tur: props.tur,
       musteriId: picked && picked.id ? picked.id : null,
       yeniAd: picked && picked.yeniAd ? picked.yeniAd : '',
@@ -58,7 +60,7 @@ export default function HareketSheet(props) {
           <Icon name={picked ? 'back' : 'x'} size={26} />
         </button>
         <h2>{picked ? baslik : (alis ? 'Kimden alınıyor?' : 'Kime satılıyor?')}</h2>
-        <div className="fab-steps"><i className="on"></i><i className={picked ? 'on' : ''}></i></div>
+        <div className="fab-steps"><i className="on"></i><i className={picked ? 'on' : ''}></i>{resmi && <i></i>}</div>
       </div>
 
       {!picked && (
@@ -120,7 +122,7 @@ export default function HareketSheet(props) {
             </div>
             <p className="fab-hint sm">
               {resmi
-                ? (alis ? 'Müstahsil faturası kesilecek · resmi stoğa girer' : 'Satış faturası kesilecek · resmi stoktan düşer')
+                ? (alis ? 'Sonraki adımda müstahsil makbuzu · resmi stoğa girer' : 'Sonraki adımda fatura (e-Fatura / e-Arşiv) · resmi stoktan düşer')
                 : 'Sadece kendi kaydımız · kayıt dışı stok'}
             </p>
 
@@ -152,10 +154,22 @@ export default function HareketSheet(props) {
 
           <div className="fab-pad">
             {props.numpad(field === 'litre' ? litre : fiyat, true, field === 'litre' ? setLitre : setFiyat)}
-            <button className={'fab-save' + (alis ? '' : ' sat')} disabled={!litreNum || props.busy} onClick={save}>
-              <Icon name="check" size={28} />
-              <span>{props.busy ? 'KAYDEDİLİYOR…' : (alis ? 'ALIŞI KAYDET' : 'SATIŞI KAYDET')}</span>
-            </button>
+{resmi ? (
+              <>
+                <button className={'fab-save' + (alis ? '' : ' sat')} disabled={!litreNum || props.busy} onClick={function () { save(true) }}>
+                  <Icon name="arrow" size={28} />
+                  <span>{props.busy ? 'KAYDEDİLİYOR…' : (alis ? 'DEVAM · MAKBUZ' : 'DEVAM · FATURA')}</span>
+                </button>
+                <button className="fab-btn wide" disabled={!litreNum || props.busy} onClick={function () { save(false) }}>
+                  <Icon name="check" size={22} /> Sadece kaydet · belgeyi sonra kes
+                </button>
+              </>
+            ) : (
+              <button className={'fab-save' + (alis ? '' : ' sat')} disabled={!litreNum || props.busy} onClick={function () { save(false) }}>
+                <Icon name="check" size={28} />
+                <span>{props.busy ? 'KAYDEDİLİYOR…' : (alis ? 'ALIŞI KAYDET' : 'SATIŞI KAYDET')}</span>
+              </button>
+            )}
           </div>
         </div>
       )}

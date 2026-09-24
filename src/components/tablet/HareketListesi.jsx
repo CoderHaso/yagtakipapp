@@ -36,6 +36,7 @@ export default function HareketListesi(props) {
         if (since && (h.tarih || '') < since) return false
         if (kayit === 'resmi' && h.resmi !== true) return false
         if (kayit === 'gayri' && h.resmi === true) return false
+        if (kayit === 'bekleyen' && !(h.resmi === true && (!h.belge || h.belge.durum === 'Draft'))) return false
         return true
       })
       .sort(function (x, y) {
@@ -81,7 +82,7 @@ export default function HareketListesi(props) {
           })}
         </div>
         <div className="fab-chips">
-          {[{ id: 'hepsi', ad: 'Hepsi' }, { id: 'resmi', ad: 'Resmi' }, { id: 'gayri', ad: 'Resmi değil' }].map(function (k) {
+          {[{ id: 'hepsi', ad: 'Hepsi' }, { id: 'resmi', ad: 'Resmi' }, { id: 'gayri', ad: 'Resmi değil' }, { id: 'bekleyen', ad: 'Belge bekleyen' }].map(function (k) {
             return <button key={k.id} className={'fab-chip' + (kayit === k.id ? ' on' : '')} onClick={function () { setKayit(k.id) }}>{k.ad}</button>
           })}
         </div>

@@ -1471,6 +1471,8 @@ h3 .eb-durum { margin-left: 10px; vertical-align: middle; font-family: var(--fon
 .eb-toplam .ana b { font-family: var(--font-display); font-size: 30px; font-weight: 400; color: var(--accent); }
 .eb-sorunlar { margin: 0; padding: 10px 14px 10px 30px; background: var(--bad-soft); color: var(--bad); border-radius: 12px; font-size: 14px; line-height: 1.5; }
 .fab-save.onay { background: var(--bad); }
+.eb-taslak-kutu { display: flex; flex-direction: column; gap: 10px; }
+.eb-sonra { margin-top: 6px; color: var(--ink-2); }
 .eb-not { font-size: 13px; color: var(--ink-3); margin: 0; line-height: 1.4; }
 
 /* Sonuç */

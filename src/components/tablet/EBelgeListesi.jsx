@@ -155,7 +155,7 @@ export function BelgeDetaySheet(props) {
   useEffect(function () {
     var iptal = false
     setGorunum({ yukleniyor: true })
-    uyumsoft(mm ? 'mmHtml' : 'faturaHtml', { id: x.id, kutu: tip }, s)
+    uyumsoft(mm ? 'mmHtml' : 'faturaHtml', { id: x.id, alt: x.alt, kutu: tip }, s)
       .then(function (r) { if (!iptal) setGorunum({ html: r.html }) })
       .catch(function (e) { if (!iptal) setGorunum({ hata: e.message }) })
     return function () { iptal = true }
@@ -164,7 +164,7 @@ export function BelgeDetaySheet(props) {
   async function pdf() {
     setCalisiyor('pdf'); setHata('')
     try {
-      var r = await uyumsoft(mm ? 'mmPdf' : 'faturaPdf', { id: x.id, kutu: tip }, s)
+      var r = await uyumsoft(mm ? 'mmPdf' : 'faturaPdf', { id: x.id, alt: x.alt, kutu: tip }, s)
       pdfAc(r.pdf, x.no || x.id)
     } catch (e) { setHata(e.message) }
     setCalisiyor('')
@@ -175,7 +175,7 @@ export function BelgeDetaySheet(props) {
     setCalisiyor(tur); setHata('')
     try {
       var islem = (mm ? 'mm' : 'fatura') + (tur === 'gonder' ? 'TaslakGonder' : 'TaslakIptal')
-      await uyumsoft(islem, { ids: [x.id] }, s)
+      await uyumsoft(islem, { ids: [x.id], alt: x.alt, kutu: tip }, s)
       if (props.onTaslak) await props.onTaslak(x, tur)
       props.onDegisti()
     } catch (e) { setHata(e.message) }

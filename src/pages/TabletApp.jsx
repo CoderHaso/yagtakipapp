@@ -521,7 +521,7 @@ export default function TabletApp() {
   }
 
   function taslakListeden(x, tur) {
-    var h = hareketler.find(function (y) { return y.belge && y.belge.belgeId === x.id })
+    var h = hareketler.find(function (y) { return y.belge && (y.belge.belgeId === x.id || (x.alt && y.belge.belgeId === x.alt)) })
     return h ? taslakSonrasi(h, tur) : Promise.resolve()
   }
 

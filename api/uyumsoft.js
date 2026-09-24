@@ -49,7 +49,53 @@ function ettnVeNo(a, b) {
   return { id: a || b, no: b && b !== a ? b : '' }
 }
 
+function guidMi(v) { return GUID.test(v || '') }
+
+// Aday kimliklerle sırayla dene: Uyumsoft "bulunamadı / hata" derse sıradakine geç.
+// adaylar bir fonksiyon da olabilir (tembel: yalnızca öncekiler başarısızsa çalışır).
+async function sirayla(adaylar, fn) {
+  var denenen = {}, son = null
+  for (var i = 0; i < adaylar.length; i++) {
+    var a = adaylar[i]
+    var liste = typeof a === 'function' ? await a().catch(function () { return [] }) : [a]
+    for (var j = 0; j < liste.length; j++) {
+      var id = liste[j]
+      if (!id || denenen[id]) continue
+      denenen[id] = true
+      try { return await fn(id) } catch (e) {
+        if (e.kod !== 'BASARISIZ' && e.kod !== 'FAULT' && e.kod !== 'YANIT') throw e
+        son = e
+      }
+    }
+  }
+  throw son || new UyumsoftHata('Belge bulunamadı', 'YANIT')
+}
+
+// Giden kutusunda ETTN/numara ile ara → Uyumsoft'un belge kimliği (DocumentId)
+async function gidenKimlik(cfg, id) {
+  var nil = function (t) { return '<' + t + ' xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>' }
+  var q = '<query PageIndex="0" PageSize="5">' +
+    nil('ExecutionStartDate') + nil('ExecutionEndDate') + nil('CreateStartDate') + nil('CreateEndDate') + nil('Status') +
+    el('InvoiceIds', id) +
+    nil('SortColumn') + nil('SortMode') + nil('IsArchived') + nil('Scenario') +
+    '</query>'
+  var r = await call(cfg, 'fatura', 'GetOutboxInvoiceList', q)
+  return kids(find(r, 'Value'), 'Items').map(function (n) { return flat(n).DocumentId }).filter(Boolean)
+}
+
+function faturaAdaylar(cfg, b, id) {
+  var list = [id, b.alt]
+  if (b.kutu !== 'gelen') list.push(function () { return gidenKimlik(cfg, id) })
+  return list
+}
+
 function el(tag, v) { return v == null || v === '' ? '' : '<' + tag + '>' + esc(v) + '</' + tag + '>' }
+
+// FlagResponse Value=false → başarısız say (sıradaki kimlik denensin)
+function taslakSonuc(r) {
+  if (r.attrs.Value === 'false') throw new UyumsoftHata(r.attrs.Message || 'Taslak işlemi yapılamadı', 'BASARISIZ')
+  return { tamam: true, mesaj: r.attrs.Message || '' }
+}
 
 // ── İşlemler ──
 var ISLEMLER = {
@@ -126,13 +172,15 @@ var ISLEMLER = {
   },
 
   async mmTaslakGonder(cfg, b) {
-    var r = await call(cfg, 'mm', 'SendDraft', '<receiptIdentifiers>' + strList(b.ids) + '</receiptIdentifiers>')
-    return { tamam: r.attrs.Value !== 'false', mesaj: r.attrs.Message || '' }
+    return sirayla([].concat(b.ids || [], b.alt || []), function (id) {
+      return call(cfg, 'mm', 'SendDraft', '<receiptIdentifiers>' + strList([id]) + '</receiptIdentifiers>').then(taslakSonuc)
+    })
   },
 
   async mmTaslakIptal(cfg, b) {
-    var r = await call(cfg, 'mm', 'CancelDraft', '<receiptIdentifiers>' + strList(b.ids) + '</receiptIdentifiers>')
-    return { tamam: r.attrs.Value !== 'false', mesaj: r.attrs.Message || '' }
+    return sirayla([].concat(b.ids || [], b.alt || []), function (id) {
+      return call(cfg, 'mm', 'CancelDraft', '<receiptIdentifiers>' + strList([id]) + '</receiptIdentifiers>').then(taslakSonuc)
+    })
   },
 
   async mmListe(cfg, b) {
@@ -150,7 +198,8 @@ var ISLEMLER = {
     var items = kids(v, 'Items').map(function (n) {
       var f = flat(n)
       return {
-        id: ettnVeNo(f.DocumentId, f.ReceiptNumber).id, no: ettnVeNo(f.DocumentId, f.ReceiptNumber).no, tarih: f.IssueDate, durum: f.StatusEnum, durumKod: num(f.Status),
+        id: f.DocumentId || f.ReceiptNumber, no: guidMi(f.ReceiptNumber) ? '' : (f.ReceiptNumber || ''),
+        alt: f.ReceiptNumber && f.ReceiptNumber !== f.DocumentId ? f.ReceiptNumber : '', tarih: f.IssueDate, durum: f.StatusEnum, durumKod: num(f.Status),
         unvan: f.TargetTitle, tckn: f.TargetVknTckn, tutar: num(f.PayableAmount),
         brut: num(f.TaxExclusiveAmount), stopaj: num(f.StoppageTaxTotal), kesinti: num(f.TaxTotal),
         yerelId: f.LocalDocumentId || '',
@@ -165,18 +214,22 @@ var ISLEMLER = {
   },
 
   async mmPdf(cfg, b) {
-    var r = await call(cfg, 'mm', 'GetPdfView', el('receiptId', b.id))
-    var v = find(r, 'Value')
-    var data = v ? (v.attrs.FileData || childText(v, 'FileData')) : ''
-    if (!data) throw new UyumsoftHata('PDF alınamadı', 'YANIT')
-    return { pdf: data, no: v.attrs.ReceiptNumber || '' }
+    return sirayla([b.id, b.alt], async function (id) {
+      var r = await call(cfg, 'mm', 'GetPdfView', el('receiptId', id))
+      var v = find(r, 'Value')
+      var data = v ? (v.attrs.FileData || childText(v, 'FileData')) : ''
+      if (!data) throw new UyumsoftHata('PDF alınamadı', 'YANIT')
+      return { pdf: data, no: v.attrs.ReceiptNumber || '' }
+    })
   },
 
   async mmHtml(cfg, b) {
-    var r = await call(cfg, 'mm', 'GetHtmlView', el('receiptId', b.id))
-    var html = childText(find(r, 'Value'), 'Html')
-    if (!html) throw new UyumsoftHata('Görüntü alınamadı', 'YANIT')
-    return { html: html }
+    return sirayla([b.id, b.alt], async function (id) {
+      var r = await call(cfg, 'mm', 'GetHtmlView', el('receiptId', id))
+      var html = childText(find(r, 'Value'), 'Html')
+      if (!html) throw new UyumsoftHata('Görüntü alınamadı', 'YANIT')
+      return { html: html }
+    })
   },
 
   // ── Satış faturası ──
@@ -219,13 +272,18 @@ var ISLEMLER = {
   },
 
   async faturaTaslakGonder(cfg, b) {
-    var r = await call(cfg, 'fatura', 'SendDraft', '<invoiceIds>' + strList(b.ids) + '</invoiceIds>')
-    return { tamam: r.attrs.Value !== 'false', mesaj: r.attrs.Message || '' }
+    var ids = [].concat(b.ids || [])
+    var r = await sirayla(faturaAdaylar(cfg, b, ids[0]), function (id) {
+      return call(cfg, 'fatura', 'SendDraft', '<invoiceIds>' + strList([id]) + '</invoiceIds>').then(taslakSonuc)
+    })
+    return r
   },
 
   async faturaTaslakIptal(cfg, b) {
-    var r = await call(cfg, 'fatura', 'CancelDraft', '<invoiceIds>' + strList(b.ids) + '</invoiceIds>')
-    return { tamam: r.attrs.Value !== 'false', mesaj: r.attrs.Message || '' }
+    var ids = [].concat(b.ids || [])
+    return sirayla(faturaAdaylar(cfg, b, ids[0]), function (id) {
+      return call(cfg, 'fatura', 'CancelDraft', '<invoiceIds>' + strList([id]) + '</invoiceIds>').then(taslakSonuc)
+    })
   },
 
   async faturaListe(cfg, b) {
@@ -245,7 +303,9 @@ var ISLEMLER = {
     var items = kids(v, 'Items').map(function (n) {
       var f = flat(n)
       return {
-        id: ettnVeNo(f.InvoiceId, f.DocumentId).id, no: ettnVeNo(f.InvoiceId, f.DocumentId).no, tarih: f.ExecutionDate || f.CreateDateUtc, durum: f.Status,
+        // DocumentId = Uyumsoft belge kimliği (görüntüleme/PDF bunu ister); InvoiceId = numara, taslakta ETTN
+        id: f.DocumentId || f.InvoiceId, no: guidMi(f.InvoiceId) ? '' : (f.InvoiceId || ''),
+        alt: f.InvoiceId && f.InvoiceId !== f.DocumentId ? f.InvoiceId : '', tarih: f.ExecutionDate || f.CreateDateUtc, durum: f.Status,
         zarfDurum: f.EnvelopeStatus, mesaj: f.Message || '',
         unvan: f.TargetTitle, vkn: f.TargetTcknVkn, tur: f.Type, senaryo: f.Scenario || '',
         tutar: num(f.PayableAmount), kdv: num(f.TaxTotal), matrah: num(f.TaxExclusiveAmount),
@@ -262,19 +322,23 @@ var ISLEMLER = {
 
   async faturaPdf(cfg, b) {
     var op = b.kutu === 'gelen' ? 'GetInboxInvoicePdf' : 'GetOutboxInvoicePdf'
-    var r = await call(cfg, 'fatura', op, el('invoiceId', b.id))
-    var v = find(r, 'Value')
-    var data = v ? childText(v, 'Data') : ''
-    if (!data) throw new UyumsoftHata('PDF alınamadı', 'YANIT')
-    return { pdf: data }
+    return sirayla(faturaAdaylar(cfg, b, b.id), async function (id) {
+      var r = await call(cfg, 'fatura', op, el('invoiceId', id))
+      var v = find(r, 'Value')
+      var data = v ? childText(v, 'Data') : ''
+      if (!data) throw new UyumsoftHata('PDF alınamadı', 'YANIT')
+      return { pdf: data }
+    })
   },
 
   async faturaHtml(cfg, b) {
     var op = b.kutu === 'gelen' ? 'GetInboxInvoiceView' : 'GetOutboxInvoiceView'
-    var r = await call(cfg, 'fatura', op, el('invoiceId', b.id))
-    var html = childText(find(r, 'Value'), 'Html')
-    if (!html) throw new UyumsoftHata('Görüntü alınamadı', 'YANIT')
-    return { html: html }
+    return sirayla(faturaAdaylar(cfg, b, b.id), async function (id) {
+      var r = await call(cfg, 'fatura', op, el('invoiceId', id))
+      var html = childText(find(r, 'Value'), 'Html')
+      if (!html) throw new UyumsoftHata('Görüntü alınamadı', 'YANIT')
+      return { html: html }
+    })
   },
 }
 

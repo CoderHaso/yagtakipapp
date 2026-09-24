@@ -1033,12 +1033,14 @@ h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 .liste-govde {
   flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 20px;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-auto-rows: max-content;   /* satır kart kadar; kaydırmalı alanda küçülüp üst üste binmesin */
   gap: 10px; align-content: start;
 }
 .liste-govde .fab-empty { grid-column: 1 / -1; }
 .hk {
   background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-sm);
   border-left: 5px solid var(--ink-3); overflow: hidden; align-self: start;
+  min-height: min-content; flex-shrink: 0;
 }
 .hk.resmi { border-left-color: var(--good); }
 .hk.gayri { border-left-color: var(--warn); }
@@ -1498,7 +1500,8 @@ h3 .eb-durum { margin-left: 10px; vertical-align: middle; font-family: var(--fon
 .eb-sk-ana span { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .eb-sk-tutar { font-family: var(--font-display); font-size: 22px; font-weight: 400; min-width: 110px; text-align: right; }
 .eb-sayfa { display: flex; align-items: center; justify-content: center; gap: 14px; flex-shrink: 0; }
-.eb-kisi { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-sm); overflow: hidden; }
+.eb-kisi { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-sm); overflow: hidden; flex-shrink: 0; }
+.eb-tablo > .eb-satir-kart { flex-shrink: 0; }
 .eb-kisi .eb-satir-kart { box-shadow: none; }
 .eb-kisi.acik { outline: 2px solid var(--accent); }
 .eb-kisi-sayi { display: flex; flex-direction: column; align-items: flex-end; font-size: 14px; }

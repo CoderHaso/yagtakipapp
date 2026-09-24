@@ -1410,3 +1410,116 @@ select.fab-input { appearance: none; -webkit-appearance: none; }
   .fab-brand > div { display: none; }
   .fab-tiles { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ═════════════ e-Belge (Uyumsoft) ═════════════ */
+.yag-sekme { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.alt-sekmeler {
+  display: flex; gap: 6px; padding: 10px 14px 0; flex-shrink: 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.alt-sekmeler::-webkit-scrollbar { display: none; }
+.alt-sekme {
+  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+  height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); color: var(--ink-2); font-size: 15px; font-weight: 600;
+}
+.alt-sekme.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.alt-sekme em {
+  font-style: normal; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  background: var(--warn); color: #fff; font-size: 12px; display: grid; place-items: center;
+}
+
+/* Kart üzerindeki belge alanı */
+.hk-alt { gap: 8px; align-items: center; flex-wrap: wrap; }
+.hk-kes { height: 48px; padding: 0 14px; font-size: 15px; color: var(--accent); border-color: var(--accent); margin-right: auto; }
+.hk-belge {
+  display: flex; align-items: center; gap: 8px; margin-right: auto; min-width: 0; flex: 1;
+  height: 48px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg-2); color: var(--ink); text-align: left;
+}
+.hk-belge span { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.15; }
+.hk-belge b { font-size: 13px; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hk-belge small { font-size: 11px; color: var(--ink-3); }
+.eb-durum {
+  font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 4px 9px; border-radius: 999px; white-space: nowrap; flex-shrink: 0;
+  background: var(--warn-soft); color: var(--warn);
+}
+.eb-durum.good { background: var(--good-soft); color: var(--good); }
+.eb-durum.bad { background: var(--bad-soft); color: var(--bad); }
+h3 .eb-durum { margin-left: 10px; vertical-align: middle; font-family: var(--font-body); }
+
+/* Belge kesme formu */
+.fab-sheet-body.eb-form { display: grid; grid-template-columns: 1fr 380px; gap: 18px; overflow: hidden; }
+.eb-sol { overflow-y: auto; min-height: 0; padding-right: 4px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
+.eb-sag { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0; }
+.eb-baslik { margin: 6px 0 0; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.eb-satir { display: flex; gap: 8px; }
+.eb-satir .fab-input { flex: 1; }
+.eb-satir .fab-btn { height: 54px; padding: 0 12px; font-size: 13px; font-family: var(--font-mono); }
+.eb-uyari { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fab-btn.sm-text { height: 38px; padding: 0 12px; font-size: 14px; margin-left: auto; }
+.eb-mukellef { padding: 12px 14px; border-radius: 12px; background: var(--bg-2); font-size: 15px; color: var(--ink-2); }
+.eb-mukellef.efatura { background: var(--accent-soft); color: var(--accent); }
+.eb-mukellef.earsiv { background: var(--warn-soft); color: var(--ink); }
+.eb-mukellef.bad { background: var(--bad-soft); color: var(--bad); }
+.eb-toplam { background: var(--surface); border-radius: 16px; padding: 6px 16px; box-shadow: var(--shadow-sm); }
+.eb-toplam > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line-2); }
+.eb-toplam > div:last-child { border-bottom: 0; }
+.eb-toplam span { font-size: 14px; color: var(--ink-3); }
+.eb-toplam b { font-size: 17px; font-weight: 600; }
+.eb-toplam .ana b { font-family: var(--font-display); font-size: 30px; font-weight: 400; color: var(--accent); }
+.eb-sorunlar { margin: 0; padding: 10px 14px 10px 30px; background: var(--bad-soft); color: var(--bad); border-radius: 12px; font-size: 14px; line-height: 1.5; }
+.fab-save.onay { background: var(--bad); }
+.eb-not { font-size: 13px; color: var(--ink-3); margin: 0; line-height: 1.4; }
+
+/* Sonuç */
+.eb-sonuc { display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: 16px; background: var(--good-soft); color: var(--good); }
+.eb-sonuc.taslak { background: var(--warn-soft); color: var(--warn); }
+.eb-sonuc > div { display: flex; flex-direction: column; gap: 2px; color: var(--ink); }
+.eb-sonuc b { font-family: var(--font-display); font-size: 28px; font-weight: 400; }
+.eb-sonuc span { font-size: 15px; color: var(--ink-2); }
+.eb-sonuc .eb-ettn { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+.eb-cerceve { width: 100%; min-height: 70vh; flex: 1; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+
+/* Uyumsoft listeleri */
+.fab-search.sm { height: 44px; margin: 0; padding: 0 12px; border-width: 1px; border-radius: 12px; flex: 1; min-width: 200px; max-width: 360px; }
+.fab-search.sm input { font-size: 15px; }
+.eb-tablo { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
+.eb-satir-kart {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 12px 16px; background: var(--surface); border: 0; border-radius: 14px;
+  box-shadow: var(--shadow-sm); color: var(--ink);
+}
+.eb-sk-ana { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.eb-sk-ana b { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eb-sk-ana span { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.eb-sk-tutar { font-family: var(--font-display); font-size: 22px; font-weight: 400; min-width: 110px; text-align: right; }
+.eb-sayfa { display: flex; align-items: center; justify-content: center; gap: 14px; flex-shrink: 0; }
+.eb-kisi { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-sm); overflow: hidden; }
+.eb-kisi .eb-satir-kart { box-shadow: none; }
+.eb-kisi.acik { outline: 2px solid var(--accent); }
+.eb-kisi-sayi { display: flex; flex-direction: column; align-items: flex-end; font-size: 14px; }
+.eb-kisi-sayi span { font-size: 11px; color: var(--ink-3); }
+.eb-kisi-form { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.eb-kimlik { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.eb-test-ok { background: var(--good-soft); color: var(--ink); }
+.fab-hint.sm svg { vertical-align: -3px; }
+
+/* Belge detay */
+.fab-sheet-body.eb-detay { display: flex; flex-direction: column; gap: 12px; }
+.eb-detay-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.eb-detay-bar .fab-btn.danger { margin-left: 0; }
+.eb-mesaj { font-size: 13px; color: var(--ink-3); }
+
+@media (max-width: 900px) {
+  .fab-sheet-body.eb-form { grid-template-columns: 1fr; overflow-y: auto; }
+  .eb-sol, .eb-sag { overflow: visible; }
+  .eb-kisi-sayi { display: none; }
+}
+@media (max-width: 600px) {
+  .eb-satir-kart { flex-wrap: wrap; }
+  .eb-sk-ana { flex-basis: 100%; }
+  .eb-sk-tutar { margin-left: auto; min-width: 0; }
+  .alt-sekme span { font-size: 13px; }
+}

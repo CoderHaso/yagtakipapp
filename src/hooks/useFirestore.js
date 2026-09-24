@@ -38,3 +38,7 @@ export function useHareketler() {
 export function useBidonlar() {
   return useCollection('bidonlar')
 }
+
+export function useFaturalar() {
+  return useCollection('faturalar')
+}

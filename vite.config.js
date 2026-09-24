@@ -3,8 +3,32 @@ import react from '@vitejs/plugin-react'
 import legacy from '@vitejs/plugin-legacy'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// `npm run dev` sırasında /api/uyumsoft'u Vercel fonksiyonu gibi çalıştırır
+function yerelApi() {
+  return {
+    name: 'yerel-api',
+    configureServer(server) {
+      server.middlewares.use('/api/uyumsoft', async (req, res) => {
+        let raw = ''
+        for await (const chunk of req) raw += chunk
+        let body = {}
+        try { body = raw ? JSON.parse(raw) : {} } catch (e) { body = {} }
+        const mod = await server.ssrLoadModule('/api/uyumsoft.js')
+        const out = {
+          statusCode: 200,
+          setHeader: (k, v) => res.setHeader(k, v),
+          status(c) { this.statusCode = c; return this },
+          json(o) { res.statusCode = this.statusCode; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)) },
+        }
+        await mod.default({ method: req.method, headers: req.headers, body }, out)
+      })
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
+    yerelApi(),
     react(),
     legacy({
       targets: ['Chrome >= 49', 'Android >= 6'],
@@ -30,6 +54,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],

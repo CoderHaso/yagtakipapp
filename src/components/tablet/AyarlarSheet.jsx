@@ -1,5 +1,6 @@
 import { FIRMA } from '../../lib/constants'
 import Icon from '../Icon'
+import EBelgeAyarlar from './EBelgeAyarlar'
 
 // ─────────────────────────────────────────────────────────────
 // AYARLAR — tablet modunun tamamı tek ekranda
@@ -111,6 +112,8 @@ export default function AyarlarSheet(props) {
             </div>
           </div>
         </section>
+
+        <EBelgeAyarlar settings={s} updateSetting={set} updateMultiple={props.updateMultiple} />
 
         <section className="ayar-blok">
           <h3>Görünüm</h3>

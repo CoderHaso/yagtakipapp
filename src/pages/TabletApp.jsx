@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useSettings } from '../hooks/useSettings'
 import { useMusteriler, useSiparisler } from '../hooks/useFirestore'
-import { musteriler as musteriDb, siparisler as siparisDb, hareketler as hareketDb } from '../lib/firestore'
+import { musteriler as musteriDb, siparisler as siparisDb, hareketler as hareketDb, faturalar as faturaDb } from '../lib/firestore'
 import { useHareketler } from '../hooks/useFirestore'
 import { hesaplaStok, verimOf } from '../lib/stok'
 import HareketSheet from '../components/tablet/HareketSheet'
 import StokSheet from '../components/tablet/StokSheet'
 import AyarlarSheet from '../components/tablet/AyarlarSheet'
-import HareketListesi from '../components/tablet/HareketListesi'
+import YagSekmesi from '../components/tablet/YagSekmesi'
+import EBelgeSheet from '../components/tablet/EBelgeSheet'
+import { BelgeDetaySheet } from '../components/tablet/EBelgeListesi'
+import { uyumsoft } from '../lib/uyumsoft'
 import { ZEYTIN_TURLERI, KOYLER, FIRMA } from '../lib/constants'
 import { fmt, initialsOf } from '../lib/fmt'
 import VoiceInput from '../components/VoiceInput'
@@ -145,6 +148,8 @@ export default function TabletApp() {
   var [tamamAralik, setTamamAralik] = useState(null)  // null → ayardaki gün
   var [showSettings, setShowSettings] = useState(false)
   var [printOrder, setPrintOrder] = useState(null)
+  var [belgeKes, setBelgeKes] = useState(null)      // e-belge kesilecek hareket
+  var [belgeAcik, setBelgeAcik] = useState(null)    // belgesi görüntülenen hareket
   var undoTimer = useRef(null)
   var toastTimer = useRef(null)
 
@@ -470,6 +475,71 @@ export default function TabletApp() {
     setBusy(false)
   }
 
+  // ── e-Belge (Uyumsoft) ──
+  async function kaydetBelge(h, sonuc, ek) {
+    var mm = h.tur === 'alis'
+    if (h.musteriId && ek && ek.musteriBilgi) {
+      try { await musteriDb.update(h.musteriId, ek.musteriBilgi) } catch (e) { /* belge kesildi, müşteri güncellemesi ikincil */ }
+    }
+    var durum = sonuc.taslak ? 'Draft' : 'Queued'
+    var kayit = {
+      tur: mm ? 'mm' : 'fatura', hareketId: h.id, hareketKod: h.kod || '', musteriId: h.musteriId || null,
+      belgeId: sonuc.belgeId, belgeNo: sonuc.belgeNo || '', uuid: sonuc.uuid,
+      tarih: sonuc.tarih, saat: sonuc.saat, durum: durum, ortam: settings.efOrtam || 'canli',
+      senaryo: sonuc.senaryo || null, profil: sonuc.profil || null,
+      taraf: ek && ek.taraf ? ek.taraf : null, hesap: sonuc.hesap,
+      tutar: mm ? sonuc.hesap.net : sonuc.hesap.toplam,
+    }
+    var faturaId = await faturaDb.add(kayit)
+    await hareketDb.update(h.id, {
+      belge: {
+        tur: kayit.tur, belgeId: kayit.belgeId, belgeNo: kayit.belgeNo, uuid: kayit.uuid, durum: durum,
+        senaryo: kayit.senaryo, tarih: kayit.tarih, ortam: kayit.ortam, faturaId: faturaId, tutar: kayit.tutar,
+      },
+    })
+    flash(sonuc.taslak ? 'Taslak oluşturuldu' : "Belge GİB'e gönderildi")
+  }
+
+  // Taslak gönderildi / silindi → hareket ve yerel kayıt güncellenir
+  async function taslakSonrasi(h, tur) {
+    if (!h || !h.belge) return
+    if (tur === 'gonder') {
+      await hareketDb.update(h.id, { belge: Object.assign({}, h.belge, { durum: 'Queued' }) })
+      if (h.belge.faturaId) faturaDb.update(h.belge.faturaId, { durum: 'Queued' }).catch(function () {})
+      flash("Taslak GİB'e gönderildi")
+    } else {
+      await hareketDb.update(h.id, { belge: null })
+      if (h.belge.faturaId) faturaDb.update(h.belge.faturaId, { durum: 'Canceled' }).catch(function () {})
+      flash('Taslak silindi')
+    }
+  }
+
+  function taslakListeden(x, tur) {
+    var h = hareketler.find(function (y) { return y.belge && y.belge.belgeId === x.id })
+    return h ? taslakSonrasi(h, tur) : Promise.resolve()
+  }
+
+  // Belgeyi aç + Uyumsoft'tan güncel durumu çek
+  function belgeAc(h) {
+    setBelgeAcik(h)
+    var b = h.belge
+    if (!b || !b.belgeId) return
+    var mm = b.tur === 'mm'
+    uyumsoft(mm ? 'mmDurum' : 'faturaDurum', { ids: [b.belgeId] }, Object.assign({}, settings, { efOrtam: b.ortam || settings.efOrtam }))
+      .then(function (r) {
+        var d = r.items && r.items[0]
+        if (!d || !d.durum) return
+        var upd = { durum: d.durum }
+        if (d.no && d.no !== b.belgeNo) upd.belgeNo = d.no
+        if (upd.durum === b.durum && !upd.belgeNo) return
+        var yeni = Object.assign({}, b, upd)
+        hareketDb.update(h.id, { belge: yeni })
+        if (b.faturaId) faturaDb.update(b.faturaId, upd).catch(function () {})
+        setBelgeAcik(function (cur) { return cur && cur.id === h.id ? Object.assign({}, cur, { belge: yeni }) : cur })
+      })
+      .catch(function () { /* durum sorgusu başarısızsa kayıtlı durum gösterilir */ })
+  }
+
   async function saveMusteri(id, bilgi) {
     setBusy(true)
     try {
@@ -563,13 +633,20 @@ export default function TabletApp() {
       </nav>
 
       {tab !== 'is' && (
-        <HareketListesi
+        <YagSekmesi
           tur={tab}
           hareketler={hareketler}
+          musteriler={musteriler}
           musteriMap={musteriMap}
           settings={settings}
+          busy={busy}
           onYeni={function () { setSheet(tab) }}
           onSil={silHareket}
+          onBelgeKes={function (h) { setBelgeKes(h) }}
+          onBelgeAc={belgeAc}
+          onTaslakListeden={taslakListeden}
+          onSaveMusteri={saveMusteri}
+          onAyarlar={function () { setShowSettings(true) }}
         />
       )}
 
@@ -704,11 +781,38 @@ export default function TabletApp() {
         />
       )}
 
+      {belgeKes && (
+        <EBelgeSheet
+          tur={belgeKes.tur}
+          hareket={belgeKes}
+          musteri={belgeKes.musteriId ? musteriMap[belgeKes.musteriId] : null}
+          settings={settings}
+          onKaydet={function (sonuc, ek) { return kaydetBelge(belgeKes, sonuc, ek) }}
+          onAyarlar={function () { setBelgeKes(null); setShowSettings(true) }}
+          onClose={function () { setBelgeKes(null) }}
+        />
+      )}
+      {belgeAcik && belgeAcik.belge && (
+        <BelgeDetaySheet
+          tip={belgeAcik.belge.tur === 'mm' ? 'mm' : 'giden'}
+          belge={{
+            id: belgeAcik.belge.belgeId, no: belgeAcik.belge.belgeNo, durum: belgeAcik.belge.durum,
+            tutar: belgeAcik.belge.tutar,
+            unvan: belgeAcik.musteriId && musteriMap[belgeAcik.musteriId] ? musteriMap[belgeAcik.musteriId].ad : '',
+          }}
+          settings={Object.assign({}, settings, { efOrtam: belgeAcik.belge.ortam || settings.efOrtam })}
+          onTaslak={function (x, tur) { return taslakSonrasi(belgeAcik, tur) }}
+          onDegisti={function () { setBelgeAcik(null) }}
+          onClose={function () { setBelgeAcik(null) }}
+        />
+      )}
+
       {/* ── Ayarlar ── */}
       {showSettings && (
         <AyarlarSheet
           settings={settings}
           updateSetting={updateSetting}
+          updateMultiple={settingsHook[2].updateMultiple}
           onClose={function () { setShowSettings(false) }}
         />
       )}

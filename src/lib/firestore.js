@@ -80,6 +80,14 @@ export const hareketler = {
   delete: (id) => deleteDocument('hareketler', id),
 }
 
+// Kesilen e-belgelerin yerel kaydı (müstahsil makbuzu / satış faturası)
+export const faturalar = {
+  subscribe: (cb) => subscribeCollection('faturalar', cb),
+  add: (data) => addDocument('faturalar', data),
+  update: (id, data) => updateDocument('faturalar', id, data),
+  delete: (id) => deleteDocument('faturalar', id),
+}
+
 export const bidonlar = {
   subscribe: (cb) => subscribeCollection('bidonlar', cb),
   add: (data) => addDocument('bidonlar', data),

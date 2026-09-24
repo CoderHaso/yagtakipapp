@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { fmt, initialsOf } from '../../lib/fmt'
+import { MM_DURUM, FATURA_DURUM, durumSinifi } from '../../lib/efatura'
 import Icon from '../Icon'
 
 // ─────────────────────────────────────────────────────────────
@@ -114,9 +115,26 @@ export default function HareketListesi(props) {
               </div>
               {h.not ? <div className="hk-not">{h.not}</div> : null}
               <div className="hk-alt">
-                <button className="fab-btn sm danger" onClick={function () { props.onSil(h) }} title="Sil">
-                  <Icon name="trash" size={18} />
-                </button>
+                {h.resmi && h.belge && (
+                  <button className="hk-belge" onClick={function () { props.onBelgeAc(h) }}>
+                    <Icon name="archive" size={18} />
+                    <span>
+                      <b>{h.belge.belgeNo || (alis ? 'Müstahsil makbuzu' : 'Fatura')}</b>
+                      <small>{h.belge.tur === 'mm' ? 'e-MM' : h.belge.senaryo === 'eInvoice' ? 'e-Fatura' : 'e-Arşiv'}{h.belge.ortam === 'test' ? ' · test' : ''}</small>
+                    </span>
+                    <em className={'eb-durum ' + durumSinifi(h.belge.durum)}>{(h.belge.tur === 'mm' ? MM_DURUM : FATURA_DURUM)[h.belge.durum] || h.belge.durum || '—'}</em>
+                  </button>
+                )}
+                {h.resmi && !h.belge && props.onBelgeKes && (
+                  <button className="fab-btn hk-kes" onClick={function () { props.onBelgeKes(h) }}>
+                    <Icon name="plus" size={18} /> {alis ? 'Müstahsil kes' : 'Fatura kes'}
+                  </button>
+                )}
+                {!(h.belge && h.belge.durum !== 'Draft') && (
+                  <button className="fab-btn sm danger" onClick={function () { props.onSil(h) }} title="Sil">
+                    <Icon name="trash" size={18} />
+                  </button>
+                )}
               </div>
             </div>
           )

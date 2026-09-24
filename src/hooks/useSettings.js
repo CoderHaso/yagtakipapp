@@ -33,6 +33,24 @@ const DEFAULTS = {
 
   // Kartta basılan firma bilgileri
   firmaAd: '', firmaAlt: '', firmaTel: '', firmaGsm: '', firmaAdres: '',
+
+  // e-Belge (Uyumsoft) — resmi firma bilgileri (fatura / makbuz üzerinde)
+  efOrtam: 'canli',            // canli | test (Uyumsoft ortak test hesabı)
+  efVkn: '', efUnvan: '', efAdSoyad: '', efVergiDairesi: '',
+  efAdres: '', efBinaNo: '', efIlce: '', efIl: '',
+  efTel: '', efEposta: '', efWeb: '', efMersis: '', efSicil: '',
+  efUrunAd: 'Zeytinyağı',
+  // Satış faturası
+  efKdvOran: 1,
+  efKdvDahil: true,            // satış fiyatı KDV dahil girilir
+  efProfil: 'TEMELFATURA',     // e-Fatura mükellefine: TEMELFATURA | TICARIFATURA
+  efSeri: '',                  // boş → Uyumsoft varsayılan seri
+  // Müstahsil makbuzu kesintileri (%)
+  mmStopajOran: 2,
+  mmBorsaOran: 0,
+  mmMeraOran: 0,
+  mmSgkOran: 0,
+  mmSeri: '',
 }
 
 const SETTINGS_DOC = doc(db, 'ayarlar', 'genel')

@@ -312,11 +312,11 @@ export default function EBelgeSheet(props) {
           <div className="fab-grid">
             <div className="fab-row">
               <label className="fab-label">Miktar ({birim})</label>
-              <input className="fab-input" type="number" inputMode="decimal" value={f.miktar} onChange={function (e) { set('miktar', e.target.value) }} />
+              <input className="fab-input" type="text" inputMode="decimal" value={f.miktar} onChange={function (e) { set('miktar', e.target.value) }} />
             </div>
             <div className="fab-row">
               <label className="fab-label">Birim fiyat (₺){!mm ? (s.efKdvDahil !== false ? ' · KDV dahil' : ' · KDV hariç') : ' · brüt'}</label>
-              <input className="fab-input" type="number" inputMode="decimal" value={f.birimFiyat} onChange={function (e) { set('birimFiyat', e.target.value) }} />
+              <input className="fab-input" type="text" inputMode="decimal" value={f.birimFiyat} onChange={function (e) { set('birimFiyat', e.target.value) }} />
             </div>
             {inp('not', 'Belge notu', { wide: true, attrs: { placeholder: 'İsteğe bağlı' } })}
           </div>

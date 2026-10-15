@@ -16,6 +16,8 @@ import { fmt, initialsOf } from '../lib/fmt'
 import VoiceInput from '../components/VoiceInput'
 import PrintCard from '../components/PrintCard'
 import Icon from '../components/Icon'
+import NumpadDock from '../components/tablet/NumpadDock'
+import CarilerSekmesi from '../components/tablet/CarilerSekmesi'
 
 // ─────────────────────────────────────────────────────────────
 // FABRİKA MODU — ana uygulama (/), yönetim paneli /pcmod
@@ -48,9 +50,12 @@ function nextKod(list, prefix, start) {
 }
 
 // ── Müşteri bilgileri: hepsi isteğe bağlı, ad dışında zorunlu alan yok ──
-var EMPTY_BILGI = { tel: '', tc: '', koy: '', adres: '', notlar: '' }
+var EMPTY_BILGI = { tel: '', tc: '', koy: '', adres: '', notlar: '', vkn: '', unvan: '', vergiDairesi: '', ilce: '', il: '', eposta: '' }
 function bilgiOf(m) {
-  return { tel: m.tel || '', tc: m.tc || '', koy: m.koy || '', adres: m.adres || '', notlar: m.notlar || '' }
+  return {
+    tel: m.tel || '', tc: m.tc || '', koy: m.koy || '', adres: m.adres || '', notlar: m.notlar || '',
+    vkn: m.vkn || '', unvan: m.unvan || '', vergiDairesi: m.vergiDairesi || '', ilce: m.ilce || '', il: m.il || '', eposta: m.eposta || '',
+  }
 }
 function MusteriBilgiForm(props) {
   var b = props.bilgi
@@ -73,6 +78,12 @@ function MusteriBilgiForm(props) {
       {f('tc', 'TC Kimlik', { inputMode: 'numeric', maxLength: 11, placeholder: '11 hane' })}
       {f('koy', 'Köy / Mahalle', { list: 'fab-koy', placeholder: 'Köy' })}
       {f('adres', 'Adres', { placeholder: 'Mevkii, no' })}
+      {props.genis && f('unvan', 'Ünvan (firma)', { placeholder: 'Faturada yazan ünvan' })}
+      {props.genis && f('vkn', 'VKN (firma)', { inputMode: 'numeric', maxLength: 10, placeholder: '10 hane' })}
+      {props.genis && f('vergiDairesi', 'Vergi dairesi')}
+      {props.genis && f('ilce', 'İlçe')}
+      {props.genis && f('il', 'İl')}
+      {props.genis && f('eposta', 'E-posta', { type: 'email' })}
       {f('notlar', 'Not', { placeholder: 'Örn: 5 lt teneke ister' })}
       <datalist id="fab-koy">{KOYLER.map(function (k) { return <option key={k} value={k} /> })}</datalist>
     </div>
@@ -144,7 +155,7 @@ export default function TabletApp() {
   var [busy, setBusy] = useState(false)
   var [toast, setToast] = useState(null)
   var [undo, setUndo] = useState(null)          // { label, revert }
-  var [tab, setTab] = useState('is')            // 'is' | 'alis' | 'satis'
+  var [tab, setTab] = useState('is')            // 'is' | 'alis' | 'satis' | 'cari'
   var [tamamAralik, setTamamAralik] = useState(null)  // null → ayardaki gün
   var [showSettings, setShowSettings] = useState(false)
   var [printOrder, setPrintOrder] = useState(null)
@@ -555,6 +566,25 @@ export default function TabletApp() {
     setBusy(false)
   }
 
+  async function addMusteri(bilgi) {
+    setBusy(true)
+    try {
+      await musteriDb.add(Object.assign({ kod: nextKod(musteriler, 'M-', 0), durum: 'aktif', uyelik: today }, bilgi))
+      flash('Cari eklendi')
+    } catch (e) { flash('Hata: ' + e.message) }
+    setBusy(false)
+  }
+
+  async function deleteMusteri(m) {
+    setBusy(true)
+    try {
+      var copy = Object.assign({}, m); delete copy.id
+      await musteriDb.delete(m.id)
+      offerUndo((m.ad || 'Cari') + ' silindi', function () { return musteriDb.add(copy) })
+    } catch (e) { flash('Hata: ' + e.message) }
+    setBusy(false)
+  }
+
   async function deleteOrder(order) {
     setBusy(true)
     try {
@@ -636,9 +666,26 @@ export default function TabletApp() {
           <Icon name="coin" size={20} />
           <span>Satılan Yağlar</span>
         </button>
+        <button className={'fab-tab' + (tab === 'cari' ? ' on' : '')} onClick={function () { setTab('cari') }}>
+          <Icon name="users" size={20} />
+          <span>Cariler</span>
+        </button>
       </nav>
 
-      {tab !== 'is' && (
+      {tab === 'cari' && (
+        <CarilerSekmesi
+          musteriler={musteriler}
+          hareketler={hareketler}
+          siparisler={siparisler}
+          settings={settings}
+          busy={busy}
+          onSave={saveMusteri}
+          onAdd={addMusteri}
+          onDelete={deleteMusteri}
+        />
+      )}
+
+      {(tab === 'alis' || tab === 'satis') && (
         <YagSekmesi
           tur={tab}
           hareketler={hareketler}
@@ -690,6 +737,8 @@ export default function TabletApp() {
         })}
       </div>
       )}
+
+      <NumpadDock />
 
       {/* ── Geri Al çubuğu ── */}
       {undo && (
@@ -912,7 +961,7 @@ function KabulSheet(props) {
   function setB(k, v) { setBilgi(function (b) { var n = Object.assign({}, b); n[k] = v; return n }); setBilgiDirty(true) }
 
   var nq = normalize(q)
-  var list = nq ? props.customers.filter(function (m) { return normalize(m.ad).indexOf(nq) !== -1 }) : props.customers
+  var list = nq ? props.customers.filter(function (m) { return [m.ad, m.unvan, m.vkn, m.tc, m.tel, m.kod].some(function (v) { return normalize(v).indexOf(nq) !== -1 }) }) : props.customers
   var shown = list.slice(0, 18)
   var exact = list.some(function (m) { return normalize(m.ad) === nq })
 
@@ -974,7 +1023,7 @@ function KabulSheet(props) {
                 <button key={m.id} className="fab-tile" onClick={function () { pick(m) }}>
                   <div className="fab-tile-av">{initialsOf(m.ad)}</div>
                   <div className="fab-tile-name">{m.ad}</div>
-                  <div className="fab-tile-meta">{m.koy || '—'}</div>
+                  <div className="fab-tile-meta">{m.vkn ? 'VKN ' + m.vkn : (m.koy || '—')}</div>
                 </button>
               )
             })}
@@ -1152,8 +1201,8 @@ function DetaySheet(props) {
       </div>
       <div className="fab-sheet-body form">
         <div className="fab-grid">
-          <div className="fab-row"><label className="fab-label">Zeytin (kg)</label><input className="fab-input" type="number" inputMode="decimal" value={f.zeytinKg} onChange={function (e) { set('zeytinKg', e.target.value) }} /></div>
-          <div className="fab-row"><label className="fab-label">Çuval</label><input className="fab-input" type="number" inputMode="numeric" value={f.cuval} onChange={function (e) { set('cuval', e.target.value) }} /></div>
+          <div className="fab-row"><label className="fab-label">Zeytin (kg)</label><input className="fab-input" type="text" inputMode="decimal" value={f.zeytinKg} onChange={function (e) { set('zeytinKg', e.target.value) }} /></div>
+          <div className="fab-row"><label className="fab-label">Çuval</label><input className="fab-input" type="text" inputMode="numeric" value={f.cuval} onChange={function (e) { set('cuval', e.target.value) }} /></div>
           <div className="fab-row"><label className="fab-label">Zeytin Türü</label>
             <select className="fab-input" value={f.tur} onChange={function (e) { set('tur', e.target.value) }}>
               {ZEYTIN_TURLERI.map(function (t) { return <option key={t.id} value={t.id}>{t.ad}</option> })}
@@ -1162,9 +1211,9 @@ function DetaySheet(props) {
           <div className="fab-row"><label className="fab-label">Operatör</label><input className="fab-input" value={f.operator} onChange={function (e) { set('operator', e.target.value) }} /></div>
           {o.durum === 'tamamlandi' && (
             <>
-              <div className="fab-row"><label className="fab-label">Çıkan Yağ (kg)</label><input className="fab-input" type="number" inputMode="decimal" value={f.cikanYag} onChange={function (e) { set('cikanYag', e.target.value) }} /></div>
-              <div className="fab-row"><label className="fab-label">Asit</label><input className="fab-input" type="number" inputMode="decimal" value={f.asit} onChange={function (e) { set('asit', e.target.value) }} /></div>
-              <div className="fab-row"><label className="fab-label">Bidon</label><input className="fab-input" type="number" inputMode="numeric" value={f.bidon} onChange={function (e) { set('bidon', e.target.value) }} /></div>
+              <div className="fab-row"><label className="fab-label">Çıkan Yağ (kg)</label><input className="fab-input" type="text" inputMode="decimal" value={f.cikanYag} onChange={function (e) { set('cikanYag', e.target.value) }} /></div>
+              <div className="fab-row"><label className="fab-label">Asit</label><input className="fab-input" type="text" inputMode="decimal" value={f.asit} onChange={function (e) { set('asit', e.target.value) }} /></div>
+              <div className="fab-row"><label className="fab-label">Bidon</label><input className="fab-input" type="text" inputMode="numeric" value={f.bidon} onChange={function (e) { set('bidon', e.target.value) }} /></div>
             </>
           )}
           <div className="fab-row"><label className="fab-label">Köy</label><input className="fab-input" list="fab-koy2" value={f.koy} onChange={function (e) { set('koy', e.target.value) }} /><datalist id="fab-koy2">{KOYLER.map(function (k) { return <option key={k} value={k} /> })}</datalist></div>
@@ -1242,7 +1291,7 @@ function AraSheet(props) {
               <div className="fab-picked-text">
                 <div className="fab-picked-name">{sel.ad}</div>
                 <div className="fab-picked-meta">
-                  {[sel.koy, sel.tel, sel.tc ? 'TC ' + sel.tc : '', sel.adres].filter(Boolean).join(' · ') || 'Bilgi girilmemiş'}
+                  {[sel.unvan, sel.vkn ? 'VKN ' + sel.vkn : '', sel.vergiDairesi, sel.koy, sel.tel, sel.tc ? 'TC ' + sel.tc : '', sel.adres, [sel.ilce, sel.il].filter(Boolean).join('/'), sel.eposta].filter(Boolean).join(' · ') || 'Bilgi girilmemiş'}
                 </div>
               </div>
               <button className={'fab-icon-btn sm' + (editing ? ' on' : '')} onClick={function () { setEditing(!editing); if (!editing) setBilgi(bilgiOf(sel)) }} title="Bilgileri düzenle">
@@ -1251,7 +1300,7 @@ function AraSheet(props) {
             </div>
             {editing && (
               <div className="fab-musteri-edit">
-                <MusteriBilgiForm bilgi={bilgi} onChange={setB} />
+                <MusteriBilgiForm bilgi={bilgi} onChange={setB} genis />
                 <div className="fab-actions">
                   <button className="fab-btn primary" disabled={props.busy} onClick={saveBilgi}><Icon name="check" size={22} /> Kaydet</button>
                   <button className="fab-btn" onClick={function () { setEditing(false) }}>Vazgeç</button>
@@ -1403,8 +1452,8 @@ function SiparisDetay(props) {
       )}
       {duzenle && (
         <div className="fab-grid">
-          <div className="fab-row"><label className="fab-label">Zeytin (kg)</label><input className="fab-input" type="number" inputMode="decimal" value={f.zeytinKg} onChange={function (e) { set('zeytinKg', e.target.value) }} /></div>
-          <div className="fab-row"><label className="fab-label">Çuval</label><input className="fab-input" type="number" inputMode="numeric" value={f.cuval} onChange={function (e) { set('cuval', e.target.value) }} /></div>
+          <div className="fab-row"><label className="fab-label">Zeytin (kg)</label><input className="fab-input" type="text" inputMode="decimal" value={f.zeytinKg} onChange={function (e) { set('zeytinKg', e.target.value) }} /></div>
+          <div className="fab-row"><label className="fab-label">Çuval</label><input className="fab-input" type="text" inputMode="numeric" value={f.cuval} onChange={function (e) { set('cuval', e.target.value) }} /></div>
           <div className="fab-row"><label className="fab-label">Zeytin türü</label>
             <select className="fab-input" value={f.tur} onChange={function (e) { set('tur', e.target.value) }}>
               {ZEYTIN_TURLERI.map(function (t) { return <option key={t.id} value={t.id}>{t.ad}</option> })}
@@ -1412,9 +1461,9 @@ function SiparisDetay(props) {
           </div>
           <div className="fab-row"><label className="fab-label">Takip no</label><input className="fab-input" inputMode="numeric" value={f.takipNo} onChange={function (e) { set('takipNo', e.target.value) }} /></div>
           <div className="fab-row"><label className="fab-label">Operatör</label><input className="fab-input" value={f.operator} onChange={function (e) { set('operator', e.target.value) }} /></div>
-          {done && <div className="fab-row"><label className="fab-label">Çıkan yağ (kg)</label><input className="fab-input" type="number" inputMode="decimal" value={f.cikanYag} onChange={function (e) { set('cikanYag', e.target.value) }} /></div>}
-          {done && <div className="fab-row"><label className="fab-label">Asit</label><input className="fab-input" type="number" inputMode="decimal" value={f.asit} onChange={function (e) { set('asit', e.target.value) }} /></div>}
-          {done && <div className="fab-row"><label className="fab-label">Bidon</label><input className="fab-input" type="number" inputMode="numeric" value={f.bidon} onChange={function (e) { set('bidon', e.target.value) }} /></div>}
+          {done && <div className="fab-row"><label className="fab-label">Çıkan yağ (kg)</label><input className="fab-input" type="text" inputMode="decimal" value={f.cikanYag} onChange={function (e) { set('cikanYag', e.target.value) }} /></div>}
+          {done && <div className="fab-row"><label className="fab-label">Asit</label><input className="fab-input" type="text" inputMode="decimal" value={f.asit} onChange={function (e) { set('asit', e.target.value) }} /></div>}
+          {done && <div className="fab-row"><label className="fab-label">Bidon</label><input className="fab-input" type="text" inputMode="numeric" value={f.bidon} onChange={function (e) { set('bidon', e.target.value) }} /></div>}
           <div className="fab-row wide"><label className="fab-label">Not</label><input className="fab-input" value={f.not} onChange={function (e) { set('not', e.target.value) }} /></div>
         </div>
       )}

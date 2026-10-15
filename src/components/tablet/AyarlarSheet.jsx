@@ -23,7 +23,7 @@ export default function AyarlarSheet(props) {
     return (
       <div className="fab-row">
         <label className="fab-label">{label}</label>
-        <input className="fab-input" type="number" inputMode="decimal" step={step || 1}
+        <input className="fab-input" type="text" inputMode="decimal" step={step || 1}
           value={s[key]} onChange={function (e) { set(key, Number(e.target.value) || 0) }} />
         {ipucu && <span className="fab-ip">{ipucu}</span>}
       </div>

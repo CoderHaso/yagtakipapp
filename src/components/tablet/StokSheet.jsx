@@ -111,7 +111,7 @@ export default function StokSheet(props) {
             <div className="fab-grid">
               <div className="fab-row">
                 <label className="fab-label">Miktar ({birim})</label>
-                <input className="fab-input" type="number" inputMode="decimal" autoFocus
+                <input className="fab-input" type="text" inputMode="decimal" autoFocus
                   value={ekle.litre} onChange={function (e) { setEkle(Object.assign({}, ekle, { litre: e.target.value })) }} />
               </div>
               <div className="fab-row">

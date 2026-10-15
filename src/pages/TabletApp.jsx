@@ -39,6 +39,14 @@ function daysAgoStr(n) {
   var d = new Date(); d.setDate(d.getDate() - n)
   return dateStr(d)
 }
+// e-Belge firma adresi; ilçe/il adresin içinde zaten geçiyorsa tekrar ekleme
+function efAdresStr(s) {
+  var a = String(s.efAdres || '').trim()
+  if (!a) return ''
+  var up = a.toLocaleUpperCase('tr-TR')
+  var ek = [s.efIlce, s.efIl].filter(function (x) { return x && up.indexOf(String(x).toLocaleUpperCase('tr-TR')) === -1 })
+  return ek.length ? a + ' ' + ek.join('/') : a
+}
 function normalize(s) { return (s || '').toLocaleLowerCase('tr-TR').trim() }
 function nextKod(list, prefix, start) {
   var max = start
@@ -143,10 +151,12 @@ export default function TabletApp() {
   var firma = useMemo(function () {
     return {
       ad: settings.firmaAd || FIRMA.ad, alt: settings.firmaAlt || FIRMA.alt,
-      tel: settings.firmaTel || FIRMA.tel, gsm: settings.firmaGsm || FIRMA.gsm,
-      adres: settings.firmaAdres || FIRMA.adres, web: FIRMA.web, vergi: FIRMA.vergi,
+      // Kart ayarı boşsa e-Belge firma bilgisi (Ayarlar → e-Fatura) kullanılır, o da yoksa varsayılan
+      tel: settings.firmaTel || settings.efTel || FIRMA.tel, gsm: settings.firmaGsm || FIRMA.gsm,
+      adres: settings.firmaAdres || efAdresStr(settings) || FIRMA.adres,
+      web: FIRMA.web, vergi: FIRMA.vergi,
     }
-  }, [settings.firmaAd, settings.firmaAlt, settings.firmaTel, settings.firmaGsm, settings.firmaAdres])
+  }, [settings.firmaAd, settings.firmaAlt, settings.firmaTel, settings.firmaGsm, settings.firmaAdres, settings.efTel, settings.efAdres, settings.efIlce, settings.efIl])
   var tamamGun = settings.tabletTamamGun || 1  // tamamlanan kolonunda kaç günlük
 
   // ── UI durumu ──

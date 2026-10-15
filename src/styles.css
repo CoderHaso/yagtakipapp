@@ -451,11 +451,12 @@ h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 .pcard.termal .t-divider { border-top: 1px dashed #000; margin: 1mm 0; }
 .pcard.termal .t-foot { text-align: center; font-size: 6.5pt; padding-top: 1.5mm; border-top: 1px dashed #000; line-height: 1.4; }
 
-/* Print — kart kağıdı: 70mm x 140mm, kenar boşluksuz. Yazdırma penceresinde
-   kağıt boyutu bu değere otomatik ayarlanır (Chrome / Edge). */
-@page { size: 70mm 140mm; margin: 0; }
+/* Print — A4 kağıt, kenar boşluksuz. Kart (70mm x 140mm) sayfanın en üstünde,
+   yatayda ortada basılır. */
+@page { size: A4 portrait; margin: 0; }
 @media print {
-  html, body { margin: 0 !important; padding: 0 !important; width: 70mm; height: 140mm; overflow: hidden; background: #fff !important; }
+  html, body { margin: 0 !important; padding: 0 !important; width: 210mm; height: 297mm; overflow: hidden; background: #fff !important; }
+  .tablet-print-only.print-area { top: 0 !important; left: 50% !important; transform: translateX(-50%); width: 70mm; height: 140mm; }
   .pcard { -webkit-print-color-adjust: exact; print-color-adjust: exact; break-inside: avoid; page-break-inside: avoid; }
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }

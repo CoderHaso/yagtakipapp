@@ -361,39 +361,40 @@ h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 .pc-takip.termal { border-style: solid; border-width: 1px 0; border-radius: 0; }
 
 /* ---- Variant: Klasik ---- */
+.pcard.klasik { --kart-murekkep: #1d3557; }  /* koyu lacivert: saf siyah toner yerine */
 .pcard.klasik {
-  background: #fff; color: #000;
-  border: 1px solid #000;
+  background: #fff; color: var(--kart-murekkep);
+  border: 1px solid var(--kart-murekkep);
   padding: 5mm 5mm 4mm;
   display: flex; flex-direction: column;
 }
 .pcard.klasik::before {
   content: ""; position: absolute; inset: 2mm;
-  border: 1px solid #000; pointer-events: none;
+  border: 1px solid var(--kart-murekkep); pointer-events: none;
 }
 .pcard.klasik .pc-brand {
-  text-align: center; padding-bottom: 2mm; border-bottom: 1px solid #000;
+  text-align: center; padding-bottom: 2mm; border-bottom: 1px solid var(--kart-murekkep);
   margin-bottom: 2mm; position: relative; z-index: 1;
 }
 .pcard.klasik .pc-brand .logo {
   width: 12mm; height: 12mm; margin: 0 auto 1mm;
-  border-radius: 50%; border: 1.5px solid #000;
+  border-radius: 50%; border: 1.5px solid var(--kart-murekkep);
   display: grid; place-items: center;
-  font-family: "Instrument Serif", Georgia, serif; font-size: 18pt; color: #000;
+  font-family: "Instrument Serif", Georgia, serif; font-size: 18pt; color: var(--kart-murekkep);
 }
 .pcard.klasik .pc-brand .name { font-weight: 700; font-family: "Instrument Serif", Georgia, serif; font-size: 15pt; line-height: 1; }
-.pcard.klasik .pc-brand .sub { font-size: 7pt; color: #000; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 1mm; }
+.pcard.klasik .pc-brand .sub { font-size: 7pt; color: var(--kart-murekkep); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 1mm; }
 .pcard.klasik .pc-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1mm; position: relative; z-index: 1; }
 .pcard.klasik .pc-row { display: grid; grid-template-columns: 28mm 1fr; align-items: baseline; gap: 2mm; }
-.pcard.klasik .pc-row .k { font-weight: 700; font-size: 7.5pt; color: #000; letter-spacing: 0.04em; }
+.pcard.klasik .pc-row .k { font-weight: 700; font-size: 7.5pt; color: var(--kart-murekkep); letter-spacing: 0.04em; }
 .pcard.klasik .pc-row .v {
-  font-family: "Instrument Serif", Georgia, serif; font-size: 10pt; color: #000;
-  border-bottom: 1px dotted #000; padding-bottom: 0.5mm; min-height: 4mm;
+  font-family: "Instrument Serif", Georgia, serif; font-size: 10pt; color: var(--kart-murekkep);
+  border-bottom: 1px dotted var(--kart-murekkep); padding-bottom: 0.5mm; min-height: 4mm;
 }
 .pcard.klasik .pc-row .v.big { font-size: 12pt; font-weight: 700; }
 .pcard.klasik .pc-foot {
-  flex-shrink: 0; margin-top: 1.5mm; padding-top: 1.5mm; border-top: 1px solid #000;
-  text-align: center; font-size: 6.5pt; color: #000; line-height: 1.4;
+  flex-shrink: 0; margin-top: 1.5mm; padding-top: 1.5mm; border-top: 1px solid var(--kart-murekkep);
+  text-align: center; font-size: 6.5pt; color: var(--kart-murekkep); line-height: 1.4;
   position: relative; z-index: 1;
 }
 .pcard.klasik .pc-foot strong { font-weight: 700; }

@@ -30,7 +30,7 @@ export default function HareketSheet(props) {
   var litreNum = Number(litre) || 0
   var fiyatNum = Number(fiyat) || 0
   var tutar = +(litreNum * fiyatNum).toFixed(2)
-  var birim = props.settings.yag || 'kg'
+  var birim = props.settings.yag || 'lt'
   var para = props.settings.currency || '₺'
 
   // Satışta stok yetiyor mu?

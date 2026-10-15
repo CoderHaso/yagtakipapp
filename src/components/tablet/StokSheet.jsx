@@ -20,7 +20,7 @@ var FILTRELER = [
 export default function StokSheet(props) {
   var stok = props.stok
   var k = stok.kalemler
-  var birim = props.settings.yag || 'kg'
+  var birim = props.settings.yag || 'lt'
   var para = props.settings.currency || '₺'
   var [filtre, setFiltre] = useState('hepsi')
   var [ekle, setEkle] = useState(null)   // { litre, yon, resmi, not }

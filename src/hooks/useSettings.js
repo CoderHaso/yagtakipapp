@@ -7,7 +7,7 @@ const DEFAULTS = {
   density: 1,
   cardDefault: 'klasik',
   agirlik: 'kg',
-  yag: 'kg',
+  yag: 'lt',
   currency: '₺',
   hakYagOran: 10,
   varsayilanAsitHedef: 0.50,

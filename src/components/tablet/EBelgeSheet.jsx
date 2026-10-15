@@ -14,6 +14,15 @@ import Icon from '../Icon'
 // ─────────────────────────────────────────────────────────────
 
 var NIHAI_TUKETICI = '11111111111'
+var ODEME_SEKILLERI = [
+  { v: '', ad: 'Belirtme' }, { v: 'nakit', ad: 'Nakit' }, { v: 'havale', ad: 'Havale / EFT' },
+  { v: 'kart', ad: 'Kredi kartı' }, { v: 'cek', ad: 'Çek' }, { v: 'diger', ad: 'Diğer' },
+]
+
+// Türkiye saatiyle bugün (YYYY-MM-DD)
+function bugun() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+}
 
 function ilkForm(tur, h, m, s) {
   m = m || {}
@@ -23,7 +32,7 @@ function ilkForm(tur, h, m, s) {
     adres: m.adres || m.koy || '', ilce: m.ilce || '', il: m.il || '',
     tel: m.tel || '', eposta: m.eposta || '',
     miktar: litre ? String(litre) : '', birimFiyat: fiyat ? String(fiyat) : '',
-    not: h.not || '',
+    not: h.not || '', tarih: bugun(), odeme: '', vade: '',
   }
   if (tur === 'alis') {
     return Object.assign(ortak, {
@@ -74,6 +83,12 @@ export default function EBelgeSheet(props) {
     return function () { iptal = true; clearTimeout(t) }
   }, [no, mm, s.efOrtam])
 
+  // Alıcı e-Fatura mükellefiyse ünvanı otomatik doldur (elle yazılanı ezme)
+  useEffect(function () {
+    if (!muk || !muk.unvan || String(f.unvan || '').trim()) return
+    setF(function (p) { return Object.assign({}, p, { unvan: muk.unvan }) })
+  }, [muk])
+
   var sorunlar = []
   if (eksikFirma.length) sorunlar.push('Firma bilgisi eksik: ' + eksikFirma.join(', '))
   if (mm) {
@@ -88,7 +103,8 @@ export default function EBelgeSheet(props) {
   }
   if (!(Number(f.miktar) > 0)) sorunlar.push('Miktar girin')
   if (!(Number(f.birimFiyat) > 0)) sorunlar.push('Birim fiyat girin')
-  if (!f.il || !f.ilce) sorunlar.push('İl ve ilçe gerekli')
+  if ((!f.il || !f.ilce) && (mm || no !== NIHAI_TUKETICI)) sorunlar.push('İl ve ilçe gerekli')
+  if (!mm && f.vade && f.vade < f.tarih) sorunlar.push('Vade tarihi fatura tarihinden önce olamaz')
 
   async function gonder(taslak) {
     if (sorunlar.length) return
@@ -100,12 +116,12 @@ export default function EBelgeSheet(props) {
       : { kimlikNo: no, unvan: f.unvan.trim(), adSoyad: kt === 'TCKN' ? f.unvan.trim() : '', vergiDairesi: f.vergiDairesi, adres: f.adres, ilce: f.ilce, il: f.il, tel: f.tel, eposta: f.eposta }
     var ortak = {
       firma: firmaBilgisi(s), urunAd: s.efUrunAd || 'Zeytinyağı',
-      miktar: Number(f.miktar), birim: s.yag || 'kg', birimFiyat: Number(f.birimFiyat),
+      miktar: Number(f.miktar), birim: s.yag || 'lt', birimFiyat: Number(f.birimFiyat),
       notlar: [f.not, h.kod ? 'Kayıt: ' + h.kod : ''].filter(Boolean),
     }
     var belge = mm
       ? Object.assign(ortak, { mustahsil: taraf, kesintiOranlari: kesintiOranlari(s), seri: s.mmSeri || '', teslimTarihi: h.tarih })
-      : Object.assign(ortak, { alici: taraf, kdvOran: Number(s.efKdvOran) || 0, kdvDahil: s.efKdvDahil !== false, profil: s.efProfil, seri: s.efSeri || '' })
+      : Object.assign(ortak, { alici: taraf, kdvOran: Number(s.efKdvOran) || 0, kdvDahil: s.efKdvDahil !== false, profil: s.efProfil, seri: s.efSeri || '', tarih: f.tarih, odeme: f.odeme ? { sekil: f.odeme, vade: f.vade } : null })
     var r = null
     try {
       r = await uyumsoft(mm ? 'mmGonder' : 'faturaGonder', { belge: belge, taslak: taslak, yerelId: h.kod || h.id }, s)
@@ -114,6 +130,7 @@ export default function EBelgeSheet(props) {
     }
     if (r) {
       setSonuc(r)
+      if (r.taslak) gorOtomatik(r)
       // Müşteri kartındaki fatura bilgilerini güncelle
       var mb = mm
         ? { tc: no, adres: f.adres, ilce: f.ilce, il: f.il }
@@ -126,6 +143,14 @@ export default function EBelgeSheet(props) {
     }
     setCalisiyor(null)
     setOnay(false)
+  }
+
+  async function gorOtomatik(r) {
+    setGorunum({ yukleniyor: true })
+    try {
+      var g = await uyumsoft(mm ? 'mmHtml' : 'faturaHtml', { id: r.belgeId, alt: r.belgeNo, kutu: 'giden' }, s)
+      setGorunum({ html: g.html })
+    } catch (e) { setGorunum({ hata: 'Önizleme açılamadı: ' + e.message }) }
   }
 
   async function gor() {
@@ -155,7 +180,7 @@ export default function EBelgeSheet(props) {
 
   var baslik = mm ? 'Müstahsil Makbuzu' : 'Satış Faturası'
   var adimlar = props.akis ? <div className="fab-steps"><i className="on"></i><i className="on"></i><i className="on"></i></div> : null
-  var birim = s.yag || 'kg'
+  var birim = s.yag || 'lt'
   function inp(k, label, extra) {
     return (
       <div className={'fab-row' + (extra && extra.wide ? ' wide' : '')}>
@@ -181,20 +206,22 @@ export default function EBelgeSheet(props) {
               <b>{!sonuc.taslak ? "GİB'e gönderildi" : taslakGonder === 'tamam' ? "Taslak GİB'e gönderildi" : 'Taslak kaydedildi'}</b>
               <span>
                 {sonuc.belgeNo ? 'Belge no: ' + sonuc.belgeNo : 'Belge numarası Uyumsoft tarafından verilecek'}
+                {sonuc.tarih ? ' · ' + sonuc.tarih : ''}
                 {!mm && sonuc.senaryo ? ' · ' + (sonuc.senaryo === 'eInvoice' ? 'e-Fatura (' + sonuc.profil + ')' : 'e-Arşiv') : ''}
               </span>
               <span className="eb-ettn">ETTN {sonuc.uuid}</span>
             </div>
           </div>
+          {gorunum && <BelgeCerceve gorunum={gorunum} />}
           {sonuc.taslak && taslakGonder !== 'tamam' && (
             <div className="eb-taslak-kutu">
               <p className="fab-hint">
-                Taslak Uyumsoft'ta bekliyor, GİB'e gitmedi. Şimdi gönderebilir ya da sonra
+                Taslak Uyumsoft'ta bekliyor, GİB'e gitmedi. Aşağıdaki önizlemeyi ve PDF'i kontrol et; uygunsa resmileştir, değilse bu ekranı kapat, taslak kalır. Sonra da
                 {mm ? ' Alınan Yağlar → Alışlar (kart) veya Müstahsil Makbuzları' : ' Satılan Yağlar → Satışlar (kart) veya Giden Faturalar'} sekmesinden gönderebilirsin.
               </p>
               <button className={'fab-save' + (taslakGonder === 'onay' ? ' onay' : '')} disabled={taslakGonder === 'calisiyor'} onClick={taslagiGonder}>
                 <Icon name={taslakGonder === 'onay' ? 'check' : 'arrow'} size={26} />
-                <span>{taslakGonder === 'calisiyor' ? 'GÖNDERİLİYOR…' : taslakGonder === 'onay' ? 'EMİN MİSİN? GÖNDER' : "ŞİMDİ GİB'E GÖNDER"}</span>
+                <span>{taslakGonder === 'calisiyor' ? 'GÖNDERİLİYOR…' : taslakGonder === 'onay' ? 'RESMİ BELGE OLUŞACAK · ONAYLA' : "ONAYLIYORUM · GİB'E RESMİLEŞTİR"}</span>
               </button>
             </div>
           )}
@@ -219,7 +246,6 @@ export default function EBelgeSheet(props) {
             <button className="fab-btn" onClick={pdf}><Icon name="download" size={22} /> PDF</button>
             <button className="fab-btn" onClick={props.onClose}><Icon name="check" size={22} /> Bitti</button>
           </div>
-          {gorunum && <BelgeCerceve gorunum={gorunum} />}
         </div>
       </div>
     )
@@ -294,6 +320,26 @@ export default function EBelgeSheet(props) {
             </div>
             {inp('not', 'Belge notu', { wide: true, attrs: { placeholder: 'İsteğe bağlı' } })}
           </div>
+
+          {!mm && (
+            <>
+              <h3 className="eb-baslik">Belge bilgileri</h3>
+              <div className="fab-grid">
+                {inp('tarih', 'Fatura tarihi', { attrs: { type: 'date', max: bugun() } })}
+                <div className="fab-row">
+                  <label className="fab-label">Fatura no</label>
+                  <input className="fab-input" disabled value={(s.efSeri ? s.efSeri.toUpperCase() + ' serisi · ' : '') + 'Uyumsoft sıradaki numarayı verir'} readOnly />
+                </div>
+                <div className="fab-row">
+                  <label className="fab-label">Ödeme şekli</label>
+                  <select className="fab-input" value={f.odeme} onChange={function (e) { set('odeme', e.target.value) }}>
+                    {ODEME_SEKILLERI.map(function (o) { return <option key={o.v} value={o.v}>{o.ad}</option> })}
+                  </select>
+                </div>
+                {inp('vade', 'Vade tarihi', { attrs: { type: 'date', min: f.tarih, disabled: !f.odeme } })}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="eb-sag">
@@ -324,18 +370,11 @@ export default function EBelgeSheet(props) {
           )}
           {hata && <p className="fab-hint bad">{hata}</p>}
 
-          <button className="fab-btn wide" disabled={!!sorunlar.length || !!calisiyor} onClick={function () { gonder(true) }}>
-            <Icon name="folder" size={22} /> {calisiyor === 'taslak' ? 'Kaydediliyor…' : "Taslak kaydet · GİB'e sonra gönder"}
+          <button className="fab-save" disabled={!!sorunlar.length || !!calisiyor} onClick={function () { gonder(true) }}>
+            <Icon name="eye" size={28} />
+            <span>{calisiyor === 'taslak' ? 'TASLAK HAZIRLANIYOR…' : 'TASLAK OLUŞTUR · ÖNİZLE'}</span>
           </button>
-          <button className={'fab-save' + (onay ? ' onay' : '')} disabled={!!sorunlar.length || !!calisiyor} onClick={function () { gonder(false) }}>
-            <Icon name={onay ? 'check' : 'arrow'} size={28} />
-            <span>{calisiyor === 'gonder' ? 'GÖNDERİLİYOR…' : onay ? 'EMİN MİSİN? GÖNDER' : "GİB'E GÖNDER"}</span>
-          </button>
-          <p className="eb-not">
-            {onay
-              ? 'Resmi belge oluşur ve GİB\'e iletilir. Tekrar dokunarak onayla.'
-              : 'Taslak: Uyumsoft\'ta bekler, GİB\'e gitmez — deneme için güvenli.'}
-          </p>
+          <p className="eb-not">Taslak Uyumsoft'ta bekler, GİB'e gitmez. PDF önizlemesini kontrol ettikten sonra bir sonraki ekranda resmileştirirsin.</p>
           {props.akis && (
             <button className="fab-btn wide eb-sonra" disabled={!!calisiyor} onClick={props.onClose}>
               <Icon name="clock" size={22} /> Belgeyi sonra kes

@@ -24,7 +24,7 @@ export default function HareketListesi(props) {
   var alis = props.tur === 'alis'
   var [aralik, setAralik] = useState('ay')
   var [kayit, setKayit] = useState('hepsi')   // hepsi | resmi | gayri
-  var birim = props.settings.yag || 'kg'
+  var birim = props.settings.yag || 'lt'
   var para = props.settings.currency || '₺'
 
   var liste = useMemo(function () {
@@ -88,7 +88,7 @@ export default function HareketListesi(props) {
         </div>
       </div>
 
-      <div className="liste-govde">
+      <div className="liste-govde satir-liste">
         {liste.length === 0 && (
           <div className="fab-empty">
             <p>Bu aralıkta {alis ? 'alış' : 'satış'} yok</p>
@@ -98,24 +98,17 @@ export default function HareketListesi(props) {
           var m = h.musteriId ? props.musteriMap[h.musteriId] : null
           var litre = Math.abs(Number(h.litre) || 0)
           return (
-            <div key={h.id} className={'hk ' + (h.resmi ? 'resmi' : 'gayri')}>
-              <div className="hk-head">
-                <div className="fc-av">{m ? initialsOf(m.ad) : <Icon name="swap" size={18} />}</div>
-                <div className="fc-who">
-                  <div className="fc-name">{m ? m.ad : 'Müşterisiz'}</div>
-                  <div className="fc-meta">{fmt.date(h.tarih)}{h.saat ? ' · ' + h.saat : ''}{h.kod ? ' · ' + h.kod : ''}</div>
-                </div>
-                <span className={'hk-rozet ' + (h.resmi ? 'resmi' : 'gayri')}>{h.resmi ? 'RESMİ' : 'RESMİ DEĞİL'}</span>
+            <div key={h.id} className={'hk-satir ' + (h.resmi ? 'resmi' : 'gayri')}>
+              <div className="fc-av">{m ? initialsOf(m.ad) : <Icon name="swap" size={18} />}</div>
+              <div className="hk-s-kim">
+                <b>{m ? m.ad : 'Müşterisiz'}</b>
+                <span>{fmt.date(h.tarih)}{h.saat ? ' · ' + h.saat : ''}{h.kod ? ' · ' + h.kod : ''}{h.not ? ' · ' + h.not : ''}</span>
               </div>
-              <div className="fc-nums">
-                <div className="fc-num hi">
-                  <b>{fmt.num(litre, 1)}</b><span>{birim} yağ</span>
-                </div>
-                {h.kgFiyat ? <div className="fc-num"><b>{fmt.num(h.kgFiyat, 0)}</b><span>{para}/{birim}</span></div> : null}
-                {h.tutar ? <div className="fc-num"><b>{fmt.num(h.tutar, 0)}</b><span>{para} tutar</span></div> : null}
-              </div>
-              {h.not ? <div className="hk-not">{h.not}</div> : null}
-              <div className="hk-alt">
+              <div className="hk-s-sayi"><b>{fmt.num(litre, 1)}</b><span>{birim}</span></div>
+              <div className="hk-s-sayi">{h.kgFiyat ? <><b>{fmt.num(h.kgFiyat, 0)}</b><span>{para}/{birim}</span></> : null}</div>
+              <div className="hk-s-sayi tutar">{h.tutar ? <><b>{fmt.num(h.tutar, 0)}</b><span>{para}</span></> : null}</div>
+              <span className={'hk-rozet ' + (h.resmi ? 'resmi' : 'gayri')}>{h.resmi ? 'RESMİ' : 'RESMİ DEĞİL'}</span>
+              <div className="hk-s-islem">
                 {h.resmi && h.belge && (
                   <button className="hk-belge" onClick={function () { props.onBelgeAc(h) }}>
                     <Icon name="archive" size={18} />

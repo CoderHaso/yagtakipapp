@@ -86,7 +86,7 @@ export default function YagSekmesi(props) {
 // ── Müstahsiller / Alıcılar: yağ alınan-satılan kişiler ve belge bilgileri ──
 function KisiListesi(props) {
   var alis = props.tur === 'alis'
-  var birim = props.settings.yag || 'kg'
+  var birim = props.settings.yag || 'lt'
   var [q, setQ] = useState('')
   var [acik, setAcik] = useState(null)
   var [form, setForm] = useState(null)

@@ -246,8 +246,17 @@ var ISLEMLER = {
     var profil = muk.eFatura ? (d.profil === 'TICARIFATURA' ? 'TICARIFATURA' : 'TEMELFATURA') : 'EARSIVFATURA'
 
     var now = trNow()
+    // Düzenlenebilir fatura tarihi: gelecek tarih olamaz, 7 günden eski olamaz (e-Arşiv kuralı)
+    var tarih = now.tarih
+    if (d.tarih && d.tarih !== now.tarih) {
+      var gun = (Date.parse(now.tarih) - Date.parse(d.tarih)) / 86400000
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d.tarih) || isNaN(gun)) throw new UyumsoftHata('Fatura tarihi geçersiz', 'GIRDI')
+      if (gun < 0) throw new UyumsoftHata('Fatura tarihi bugünden ileri olamaz', 'GIRDI')
+      if (gun > 7) throw new UyumsoftHata('Fatura tarihi en fazla 7 gün geriye alınabilir', 'GIRDI')
+      tarih = d.tarih
+    }
     var id = uuid()
-    var built = buildInvoice(Object.assign({}, d, { uuid: id, tarih: now.tarih, saat: now.saat, profil: profil, id: d.seri || '' }))
+    var built = buildInvoice(Object.assign({}, d, { uuid: id, tarih: tarih, saat: now.saat, profil: profil, id: d.seri || '' }))
     var unvan = d.alici.unvan || d.alici.adSoyad || ''
     var info = '<InvoiceInfo LocalDocumentId="' + esc(b.yerelId || '') + '">' +
       built.xml +
@@ -263,7 +272,7 @@ var ISLEMLER = {
     var r = await call(cfg, 'fatura', op, '<invoices>' + info + '</invoices>')
     var v = find(r, 'Value')
     return {
-      taslak: !!b.taslak, uuid: id, tarih: now.tarih, saat: now.saat, hesap: built.hesap,
+      taslak: !!b.taslak, uuid: id, tarih: tarih, saat: now.saat, hesap: built.hesap,
       senaryo: senaryo, profil: profil, etiket: etiket,
       belgeId: v ? ettnVeNo(v.attrs.Id, v.attrs.Number).id || id : id,
       belgeNo: v ? ettnVeNo(v.attrs.Id, v.attrs.Number).no : '',

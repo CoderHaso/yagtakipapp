@@ -133,6 +133,14 @@ export function buildReceipt(d) {
   return { xml: xml, hesap: h }
 }
 
+// Ödeme şekli / vade (UN/ECE 4461 kodları). Seçilmediyse eleman hiç yazılmaz.
+var ODEME_KODLARI = { nakit: '10', havale: '42', kart: '48', cek: '20', diger: 'ZZZ' }
+function odemeXml(o) {
+  if (!o || !ODEME_KODLARI[o.sekil]) return ''
+  var vade = /^\d{4}-\d{2}-\d{2}$/.test(o.vade || '') ? o.vade : ''
+  return c('PaymentMeans', b('PaymentMeansCode', ODEME_KODLARI[o.sekil]) + b('PaymentDueDate', vade))
+}
+
 // ── Satış faturası ──
 // d: { id, uuid, tarih, saat, profil, firma, alici, urunAd, miktar, birim, birimFiyat, kdvOran, kdvDahil, notlar[] }
 export function buildInvoice(d) {
@@ -155,6 +163,7 @@ export function buildInvoice(d) {
     b('LineCountNumeric', 1) +
     c('AccountingSupplierParty', party(d.firma)) +
     c('AccountingCustomerParty', party(d.alici)) +
+    odemeXml(d.odeme) +
     kdvXml +
     c('LegalMonetaryTotal',
       amt('LineExtensionAmount', h.matrah) +

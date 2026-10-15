@@ -122,7 +122,7 @@ export default function TabletApp() {
   var loading = musterilerHook.loading || siparislerHook.loading
 
   var yikamaAdimi = settings.tabletYikama === true   // varsayılan kapalı
-  var birim = settings.yag || 'kg'
+  var birim = settings.yag || 'lt'
 
   var stok = useMemo(function () {
     return hesaplaStok(siparisler, hareketler, { hakYagResmi: settings.hakYagResmi === true })
@@ -357,7 +357,7 @@ export default function TabletApp() {
       closeSheet()
       if (otoKart) openKart(Object.assign({}, order, upd))
       var m = musteriMap[order.musteriId]
-      offerUndo((m ? m.ad : order.kod) + ' · ' + fmt.num(cikanYag, 1) + ' kg yağ', function () {
+      offerUndo((m ? m.ad : order.kod) + ' · ' + fmt.num(cikanYag, 1) + ' ' + birim + ' yağ', function () {
         return siparisDb.update(order.id, { durum: prev, cikanYag: null, asit: null, oran: null, verim: null, tamamTarih: null, tamamSaat: null, hakYagKg: null, kalanYagKg: null, bidon: null, sikimUcretiAlindi: false })
       })
     } catch (e) { flash('Hata: ' + e.message) }

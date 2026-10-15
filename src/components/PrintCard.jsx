@@ -13,7 +13,7 @@ function takipStr(s) {
 }
 
 function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
-  var u = units || { agirlik: 'kg', yag: 'kg' }
+  var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
   return (
     <div className="pcard klasik">
@@ -45,7 +45,7 @@ function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
 }
 
 function PrintCardModern({ firma, musteri, siparis, zeytinTuru, units }) {
-  var u = units || { agirlik: 'kg', yag: 'kg' }
+  var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
   return (
     <div className="pcard modern">
@@ -83,7 +83,7 @@ function PrintCardModern({ firma, musteri, siparis, zeytinTuru, units }) {
 }
 
 function PrintCardTermal({ firma, musteri, siparis, zeytinTuru, units }) {
-  var u = units || { agirlik: 'kg', yag: 'kg' }
+  var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
   return (
     <div className="pcard termal">
@@ -121,7 +121,7 @@ function PrintCardTermal({ firma, musteri, siparis, zeytinTuru, units }) {
 }
 
 function PrintCardMinimal({ firma, musteri, siparis, zeytinTuru, units }) {
-  var u = units || { agirlik: 'kg', yag: 'kg' }
+  var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
   return (
     <div className="pcard minimal">
@@ -164,7 +164,7 @@ function PrintCardMinimal({ firma, musteri, siparis, zeytinTuru, units }) {
 }
 
 function PrintCardDetayli({ firma, musteri, siparis, zeytinTuru, units }) {
-  var u = units || { agirlik: 'kg', yag: 'kg' }
+  var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
   return (
     <div className="pcard detayli">
@@ -211,7 +211,7 @@ function PrintCardDetayli({ firma, musteri, siparis, zeytinTuru, units }) {
 }
 
 function PrintCardRenkli({ firma, musteri, siparis, zeytinTuru, units }) {
-  var u = units || { agirlik: 'kg', yag: 'kg' }
+  var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
   return (
     <div className="pcard renkli">

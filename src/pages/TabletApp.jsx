@@ -1556,6 +1556,12 @@ function KartSheet(props) {
               return <button key={k.id} className={'fab-chip' + (stil === k.id ? ' on' : '')} onClick={function () { props.updateSetting('cardDefault', k.id) }}>{k.ad}</button>
             })}
           </div>
+          <label className="fab-label">Yazı rengi</label>
+          <div className="fab-chips">
+            {[{ id: 'siyah', ad: 'Siyah' }, { id: 'lacivert', ad: 'Koyu lacivert' }].map(function (k) {
+              return <button key={k.id} className={'fab-chip' + ((props.settings.kartRenk || 'siyah') === k.id ? ' on' : '')} onClick={function () { props.updateSetting('kartRenk', k.id) }}>{k.ad}</button>
+            })}
+          </div>
           {!done && <p className="fab-hint">Yağ henüz girilmedi — bu fiş zeytin teslim belgesidir. Yağ çıkınca final kart tekrar basılır.</p>}
           <button className="fab-save" onClick={props.onPrint}>
             <Icon name="print" size={28} />

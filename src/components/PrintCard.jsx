@@ -16,6 +16,9 @@ function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
   var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
   var tno = takipStr(siparis)
+  // Hak yağı oranı: işlemde saklıysa o, değilse miktarlardan hesaplanır
+  var hakOran = siparis && siparis.hakYagOran != null ? Number(siparis.hakYagOran)
+    : (siparis && siparis.cikanYag > 0 && siparis.hakYagKg != null ? +(siparis.hakYagKg / siparis.cikanYag * 100).toFixed(1) : null)
   var not = siparis && siparis.not ? String(siparis.not).trim() : ''
   // Uzun notlar küçülerek sığar (satırlar kayar, taşmaz)
   var notBoyut = not.length > 220 ? 'xs' : not.length > 110 ? 'sm' : ''
@@ -38,7 +41,7 @@ function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
         <div className="pc-row"><span className="k">Zeytin (Kg)</span><span className="v big">{fmt.num(siparis?.zeytinKg, 0)}</span></div>
         <div className="pc-row"><span className="k">Zeytin Türü</span><span className="v">{zeytinTuru?.ad || '—'}</span></div>
         <div className="pc-row"><span className="k">Çıkan Yağ</span><span className="v big">{fmt.num(siparis?.cikanYag, 1)} {u.yag}</span></div>
-        <div className="pc-row"><span className="k">Hak Yağı</span><span className="v">{fmt.num(siparis?.hakYagKg, 1)} {u.yag}</span></div>
+        <div className="pc-row"><span className="k">Hak Yağı</span><span className="v">{fmt.num(siparis?.hakYagKg, 1)} {u.yag}{hakOran != null && !isNaN(hakOran) ? ' (%' + fmt.num(hakOran, hakOran % 1 ? 1 : 0) + ')' : ''}</span></div>
         <div className="pc-row"><span className="k">Kalan Yağ</span><span className="v big">{fmt.num(siparis?.kalanYagKg, 1)} {u.yag}</span></div>
         <div className="pc-row"><span className="k">Verim (kg/kg)</span><span className="v">{verimStr(siparis)}</span></div>
         <div className="pc-row"><span className="k">Asit (Dizem)</span><span className="v">{fmt.num(siparis?.asit, 2)}</span></div>

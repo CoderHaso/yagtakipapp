@@ -380,7 +380,7 @@ h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 }
 .pcard.klasik .pc-brand .name { font-weight: 700; font-family: "Instrument Serif", Georgia, serif; font-size: 16pt; line-height: 1; }
 .pcard.klasik .pc-brand .sub { font-size: 8pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1mm; }
-.pcard.klasik .pc-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.9mm; }
+.pcard.klasik .pc-rows { flex: 0 0 auto; min-height: 0; display: flex; flex-direction: column; gap: 0.6mm; }
 .pcard.klasik .pc-row { display: grid; grid-template-columns: 27mm 1fr; align-items: baseline; gap: 2mm; }
 .pcard.klasik .pc-row .k { font-weight: 700; font-size: 8.5pt; letter-spacing: 0.02em; }
 .pcard.klasik .pc-row .v {
@@ -390,7 +390,7 @@ h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 .pcard.klasik .pc-row .v.big { font-size: 14pt; font-weight: 800; }
 .pcard.klasik .pc-row .v.sm { font-size: 10pt; }
 .pcard.klasik .pc-not {
-  flex-shrink: 0; margin-top: 1.5mm; padding-top: 1.5mm; border-top: 1.5px solid var(--kart-murekkep);
+  flex-shrink: 0; margin-top: 2.5mm; padding-top: 2mm; border-top: 1.5px solid var(--kart-murekkep);
   font-size: 10pt; line-height: 1.25; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere;
   max-height: 34mm; overflow: hidden;
 }

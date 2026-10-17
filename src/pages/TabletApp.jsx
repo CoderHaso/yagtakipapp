@@ -14,7 +14,7 @@ import { uyumsoft } from '../lib/uyumsoft'
 import { ZEYTIN_TURLERI, KOYLER, FIRMA } from '../lib/constants'
 import { fmt, initialsOf } from '../lib/fmt'
 import VoiceInput from '../components/VoiceInput'
-import PrintCard from '../components/PrintCard'
+import PrintCard, { GORUNUR_STILLER } from '../components/PrintCard'
 import Icon from '../components/Icon'
 import NumpadDock from '../components/tablet/NumpadDock'
 import CarilerSekmesi from '../components/tablet/CarilerSekmesi'
@@ -357,10 +357,13 @@ export default function TabletApp() {
   }
 
   // ── Yağ girişi (tamamlama) ──
-  async function saveYag(order, cikanYag, asit, bidon, ucretAlindi) {
+  async function saveYag(order, cikanYag, asit, bidon, ucretAlindi, ek) {
     setBusy(true)
     // Sıkım ücreti nakit alındıysa hak yağı kesilmez, yağın tamamı müşterinin
-    var hakYag = ucretAlindi ? 0 : hesapla.hakYag(cikanYag)
+    ek = ek || {}
+    var hakOran = ek.hakOran != null && ek.hakOran !== '' ? Number(ek.hakOran) : Number(settings.hakYagOran)
+    if (isNaN(hakOran) || hakOran < 0) hakOran = Number(settings.hakYagOran) || 0
+    var hakYag = ucretAlindi ? 0 : +(cikanYag * hakOran / 100).toFixed(2)
     var kalan = +(cikanYag - hakYag).toFixed(2)
     var kap = settings.bidonKapasite || 17
     var upd = {
@@ -368,10 +371,11 @@ export default function TabletApp() {
       oran: hesapla.oran(order.zeytinKg || 0, cikanYag),
       verim: verimOf(order.zeytinKg || 0, cikanYag),
       tamamTarih: today, tamamSaat: nowTime(),
-      hakYagKg: hakYag, kalanYagKg: kalan,
+      hakYagKg: hakYag, kalanYagKg: kalan, hakYagOran: hakOran,
       sikimUcretiAlindi: !!ucretAlindi,
       bidon: bidon || (kalan > 0 ? Math.ceil(kalan / kap) : null),
     }
+    if (ek.not != null && String(ek.not).trim()) upd.not = String(ek.not).trim()
     var prev = order.durum || 'preste'
     try {
       await siparisDb.update(order.id, upd)
@@ -379,7 +383,7 @@ export default function TabletApp() {
       if (otoKart) openKart(Object.assign({}, order, upd))
       var m = musteriMap[order.musteriId]
       offerUndo((m ? m.ad : order.kod) + ' · ' + fmt.num(cikanYag, 1) + ' ' + birim + ' yağ', function () {
-        return siparisDb.update(order.id, { durum: prev, cikanYag: null, asit: null, oran: null, verim: null, tamamTarih: null, tamamSaat: null, hakYagKg: null, kalanYagKg: null, bidon: null, sikimUcretiAlindi: false })
+        return siparisDb.update(order.id, { durum: prev, cikanYag: null, asit: null, oran: null, verim: null, tamamTarih: null, tamamSaat: null, hakYagKg: null, kalanYagKg: null, hakYagOran: null, bidon: null, sikimUcretiAlindi: false })
       })
     } catch (e) { flash('Hata: ' + e.message) }
     setBusy(false)
@@ -428,12 +432,13 @@ export default function TabletApp() {
     setBusy(false)
   }
 
-  async function saveDetay(order, upd, musteriUpd) {
+  async function saveDetay(order, upd, musteriUpd, opts) {
     setBusy(true)
     try {
       if (musteriUpd && order.musteriId) await musteriDb.update(order.musteriId, musteriUpd)
       await siparisDb.update(order.id, upd)
-      closeSheet()
+      if (opts && opts.kart) openKart(Object.assign({}, order, upd))
+      else closeSheet()
       flash('Güncellendi')
     } catch (e) { flash('Hata: ' + e.message) }
     setBusy(false)
@@ -455,7 +460,7 @@ export default function TabletApp() {
         kod: nextKod(hareketler, 'H-', 1000), tur: data.tur, musteriId: musteriId,
         tarih: today, saat: now.toTimeString().slice(0, 5),
         litre: data.litre, kgFiyat: data.kgFiyat || null, tutar: data.tutar || null,
-        resmi: data.resmi === true, bidonNo: [], not: data.not || '',
+        resmi: data.resmi === true, bidonNo: [], not: data.not || '', birim: data.birim || settings.yag || 'lt',
       }
       var id = await hareketDb.add(h)
       closeSheet()
@@ -465,7 +470,7 @@ export default function TabletApp() {
         flash(ad + ' kaydedildi')
         setBelgeKes(Object.assign({ id: id, _akis: true, _musteriAd: data.yeniAd || '' }, h))
       } else {
-        offerUndo(ad + ' · ' + fmt.num(data.litre, 1) + ' ' + birim + (data.resmi ? ' (resmi)' : ''), function () {
+        offerUndo(ad + ' · ' + fmt.num(data.litre, 1) + ' ' + (data.birim || birim) + (data.resmi ? ' (resmi)' : ''), function () {
           return hareketDb.delete(id)
         })
       }
@@ -1106,24 +1111,27 @@ function YagSheet(props) {
   var [bidon, setBidon] = useState('')
   var [field, setField] = useState('yag')
   var [ucretAlindi, setUcretAlindi] = useState(false)
+  var [hakOran, setHakOran] = useState(String(props.settings.hakYagOran != null ? props.settings.hakYagOran : 10))
+  var [not, setNot] = useState(order.not || '')
 
   var yagNum = Number(yag) || 0
+  var hakOranNum = Number(hakOran) || 0
   // Sıkım ücreti nakit alındıysa hak yağı kesilmez
-  var hakYag = ucretAlindi ? 0 : props.hesapla.hakYag(yagNum)
+  var hakYag = ucretAlindi ? 0 : +(yagNum * hakOranNum / 100).toFixed(2)
   var kalan = +(yagNum - hakYag).toFixed(2)
   var kap = props.settings.bidonKapasite || 17
   var autoBidon = kalan > 0 ? Math.ceil(kalan / kap) : 0
   var verim = verimOf(order.zeytinKg || 0, yagNum)
 
-  var vals = { yag: yag, asit: asit, bidon: bidon }
-  var setters = { yag: setYag, asit: setAsit, bidon: setBidon }
+  var vals = { yag: yag, asit: asit, bidon: bidon, hak: hakOran }
+  var setters = { yag: setYag, asit: setAsit, bidon: setBidon, hak: setHakOran }
 
   return (
     <div className="fab-sheet">
       <div className="fab-sheet-head">
         <button className="fab-icon-btn" onClick={props.onClose}><Icon name="x" size={26} /></button>
         <h2>Yağ Gir</h2>
-        <span className="fab-sheet-sub">{props.musteri ? props.musteri.ad : order.kod} · {fmt.num(order.zeytinKg, 0)} kg zeytin</span>
+        <span className="fab-sheet-sub belirgin">{props.musteri ? props.musteri.ad : order.kod} · <b>{fmt.num(order.zeytinKg, 0)} kg zeytin</b></span>
       </div>
       <div className="fab-sheet-body split">
         <div className="fab-entry">
@@ -1141,6 +1149,10 @@ function YagSheet(props) {
                 <span>Bidon</span>
                 <b>{bidon || (autoBidon ? <em>{autoBidon}</em> : '–')}</b>
               </button>
+              <button className={'fab-field sm' + (field === 'hak' ? ' on' : '')} onClick={function () { setField('hak') }}>
+                <span>Hak yağı %</span>
+                <b>{hakOran || '0'}</b>
+              </button>
             </div>
           </div>
           <button className={'fab-tik' + (ucretAlindi ? ' on' : '')} onClick={function () { setUcretAlindi(!ucretAlindi) }}>
@@ -1152,8 +1164,16 @@ function YagSheet(props) {
           </button>
           <div className="fab-calc">
             <div><span>Verim (kg/kg)</span><b>{verim != null ? fmt.num(verim, 2) : '—'}</b></div>
-            <div className={ucretAlindi ? 'pasif' : ''}><span>Hak yağı {ucretAlindi ? '(alınmadı)' : '(%' + props.settings.hakYagOran + ')'}</span><b>{yagNum ? fmt.num(hakYag, 1) + ' kg' : '—'}</b></div>
+            <div className={ucretAlindi ? 'pasif' : ''}><span>Hak yağı {ucretAlindi ? '(alınmadı)' : '(%' + hakOranNum + ')'}</span><b>{yagNum ? fmt.num(hakYag, 1) + ' kg' : '—'}</b></div>
             <div><span>Müşteriye kalan</span><b>{yagNum ? fmt.num(kalan, 1) + ' kg' : '—'}</b></div>
+          </div>
+          <div className="fab-row">
+            <label className="fab-label">Not (karta yazdırılır)</label>
+            <div className="fab-not-satir">
+              <textarea className="fab-input fab-textarea" rows={3} value={not} placeholder="İsteğe bağlı · klavyeyi açmadan mikrofona basıp söyleyebilirsin"
+                onChange={function (e) { setNot(e.target.value) }} />
+              <VoiceInput onResult={function (v) { setNot(function (p) { return (p ? p + ' ' : '') + v }) }} />
+            </div>
           </div>
         </div>
         <div className="fab-pad">
@@ -1161,7 +1181,7 @@ function YagSheet(props) {
           <button
             className="fab-save"
             disabled={!yagNum || props.busy}
-            onClick={function () { props.onSave(order, yagNum, Number(asit) || 0, Number(bidon) || 0, ucretAlindi) }}
+            onClick={function () { props.onSave(order, yagNum, Number(asit) || 0, Number(bidon) || 0, ucretAlindi, { hakOran: hakOranNum, not: not }) }}
           >
             <Icon name="check" size={28} />
             <span>{props.busy ? 'KAYDEDİLİYOR…' : 'TAMAMLA'}</span>
@@ -1186,7 +1206,7 @@ function DetaySheet(props) {
   var [confirmDel, setConfirmDel] = useState(false)
   function set(k, v) { setF(function (p) { var n = Object.assign({}, p); n[k] = v; return n }) }
 
-  function save() {
+  function build() {
     var upd = {
       zeytinKg: Number(f.zeytinKg) || 0, cuval: Number(f.cuval) || null, tur: f.tur,
       operator: f.operator || '', not: f.not || '',
@@ -1199,8 +1219,11 @@ function DetaySheet(props) {
     }
     var mUpd = null
     if (props.musteri && (f.koy !== (m.koy || '') || f.tel !== (m.tel || ''))) mUpd = { koy: f.koy, tel: f.tel }
-    props.onSave(o, upd, mUpd)
+    return { upd: upd, mUpd: mUpd }
   }
+  function save() { var r = build(); props.onSave(o, r.upd, r.mUpd) }
+  // Kart'a basınca önce düzenlemeler kaydedilir, sonra kart açılır
+  function kartAc() { var r = build(); props.onSave(o, r.upd, r.mUpd, { kart: true }) }
 
   return (
     <div className="fab-sheet narrow">
@@ -1232,7 +1255,7 @@ function DetaySheet(props) {
         </div>
         <div className="fab-actions">
           <button className="fab-btn primary" disabled={props.busy} onClick={save}><Icon name="check" size={22} /> Kaydet</button>
-          <button className="fab-btn" onClick={props.onPrint}><Icon name="print" size={22} /> Kart</button>
+          <button className="fab-btn" disabled={props.busy} onClick={kartAc}><Icon name="print" size={22} /> Kart</button>
           {props.canBack && <button className="fab-btn" onClick={props.onBack}><Icon name="back" size={22} /> Bir adım geri</button>}
           {!confirmDel
             ? <button className="fab-btn danger" onClick={function () { setConfirmDel(true) }}><Icon name="trash" size={22} /> Sil</button>
@@ -1324,7 +1347,7 @@ function AraSheet(props) {
             <div className="mh-baslik">Yağ alış / satış</div>
             {musteriHareket.map(function (h) {
               var litre = Math.abs(Number(h.litre) || 0)
-              var birim = (props.settings && props.settings.yag) || 'kg'
+              var birim = h.birim || (props.settings && props.settings.yag) || 'lt'
               var para = (props.settings && props.settings.currency) || '₺'
               return (
                 <div key={h.id} className={'stok-row ' + h.tur}>
@@ -1482,7 +1505,7 @@ function SiparisDetay(props) {
           ? <button className="fab-btn primary" onClick={baslaDuzenle}><Icon name="edit" size={22} /> Düzenle</button>
           : <button className="fab-btn primary" disabled={props.busy} onClick={kaydet}><Icon name="check" size={22} /> Kaydet</button>}
         {duzenle && <button className="fab-btn" onClick={function () { setF(null) }}>Vazgeç</button>}
-        <button className="fab-btn" onClick={props.onKart}><Icon name="print" size={22} /> Kart</button>
+        <button className="fab-btn" disabled={props.busy} onClick={function () { if (duzenle) kaydet(); props.onKart() }}><Icon name="print" size={22} /> Kart</button>
         {props.canStepBack && <button className="fab-btn" onClick={function () { props.onStepBack(o) }}><Icon name="back" size={22} /> Bir adım geri</button>}
         {!confirmDel
           ? <button className="fab-btn danger" onClick={function () { setConfirmDel(true) }}><Icon name="trash" size={22} /> Sil</button>
@@ -1529,7 +1552,7 @@ function KartSheet(props) {
         <div className="fab-kart-side">
           <label className="fab-label">Kart tasarımı</label>
           <div className="fab-chips">
-            {KART_STILLERI.map(function (k) {
+            {KART_STILLERI.filter(function (k) { return GORUNUR_STILLER.indexOf(k.id) !== -1 }).map(function (k) {
               return <button key={k.id} className={'fab-chip' + (stil === k.id ? ' on' : '')} onClick={function () { props.updateSetting('cardDefault', k.id) }}>{k.ad}</button>
             })}
           </div>

@@ -1,5 +1,6 @@
 import { FIRMA } from '../../lib/constants'
 import Icon from '../Icon'
+import { GORUNUR_STILLER } from '../PrintCard'
 import EBelgeAyarlar from './EBelgeAyarlar'
 
 // ─────────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ export default function AyarlarSheet(props) {
       <div className="fab-row">
         <label className="fab-label">{label}</label>
         <input className="fab-input" type="text" inputMode="decimal" step={step || 1}
-          value={s[key]} onChange={function (e) { set(key, Number(e.target.value) || 0) }} />
+          value={s[key]} onChange={function (e) { var v = e.target.value; set(key, /\.\d*0?$/.test(v) && /\.$|0$/.test(v) && v.indexOf('.') !== -1 ? v : (Number(v) || 0)) }} />
         {ipucu && <span className="fab-ip">{ipucu}</span>}
       </div>
     )
@@ -93,11 +94,13 @@ export default function AyarlarSheet(props) {
           <div className="fab-row wide">
             <label className="fab-label">Kart tasarımı</label>
             <div className="fab-chips">
-              {KART_STILLERI.map(function (k) {
+              {KART_STILLERI.filter(function (k) { return GORUNUR_STILLER.indexOf(k.id) !== -1 }).map(function (k) {
                 return <button key={k.id} className={'fab-chip' + (s.cardDefault === k.id ? ' on' : '')} onClick={function () { set('cardDefault', k.id) }}>{k.ad}</button>
               })}
             </div>
           </div>
+          {seg('kartRenk', 'Kart yazı rengi', [{ v: 'siyah', ad: 'Siyah' }, { v: 'lacivert', ad: 'Koyu lacivert' }],
+            'Siyah kartuş bittiğinde lacivert seç')}
           {seg('tabletOtoKart', 'Kayıttan sonra kartı aç', [{ v: true, ad: 'Evet' }, { v: false, ad: 'Hayır' }])}
           <div className="fab-grid">
             {txt('firmaAd', 'Firma adı', FIRMA.ad)}

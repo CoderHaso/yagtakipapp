@@ -61,7 +61,7 @@ export default function EBelgeAyarlar(props) {
       <div className="fab-row">
         <label className="fab-label">{label}</label>
         <input className="fab-input" type="text" inputMode="decimal" step={step || 0.1}
-          value={s[key]} onChange={function (e) { set(key, Number(e.target.value) || 0) }} />
+          value={s[key]} onChange={function (e) { var v = e.target.value; set(key, /\.\d*0?$/.test(v) && /\.$|0$/.test(v) && v.indexOf('.') !== -1 ? v : (Number(v) || 0)) }} />
         {ipucu && <span className="fab-ip">{ipucu}</span>}
       </div>
     )

@@ -15,10 +15,21 @@ function takipStr(s) {
 function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
   var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
+  var tno = takipStr(siparis)
+  var not = siparis && siparis.not ? String(siparis.not).trim() : ''
+  // Uzun notlar küçülerek sığar (satırlar kayar, taşmaz)
+  var notBoyut = not.length > 220 ? 'xs' : not.length > 110 ? 'sm' : ''
+  // Not uzadıkça kartın geri kalanı da biraz sıkışır ki hepsi 140mm'ye sığsın
+  var sik = not.length > 220 ? ' sik2' : not.length > 110 ? ' sik1' : ''
   return (
-    <div className="pcard klasik">
+    <div className={'pcard klasik' + sik}>
+      {tno && (
+        <div className="pc-tno">
+          <span>T.NO</span>
+          <strong>{tno}</strong>
+        </div>
+      )}
       <div className="pc-brand">
-        <div className="logo">ZH</div>
         <div className="name">{f.ad}</div>
         <div className="sub">{f.alt}</div>
       </div>
@@ -31,15 +42,16 @@ function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
         <div className="pc-row"><span className="k">Kalan Yağ</span><span className="v big">{fmt.num(siparis?.kalanYagKg, 1)} {u.yag}</span></div>
         <div className="pc-row"><span className="k">Verim (kg/kg)</span><span className="v">{verimStr(siparis)}</span></div>
         <div className="pc-row"><span className="k">Asit (Dizem)</span><span className="v">{fmt.num(siparis?.asit, 2)}</span></div>
-        <div className="pc-row"><span className="k">Bidon / Çuval</span><span className="v">{siparis?.bidon ?? '—'} / {siparis?.cuval ?? '—'}</span></div>
-        <div className="pc-row"><span className="k">Köy & Adres</span><span className="v" style={{ fontSize: '8pt' }}>{musteri?.koy} — {musteri?.adres}</span></div>
-        <div className="pc-row"><span className="k">İletişim</span><span className="v">{musteri?.tel}</span></div>
+        <div className="pc-row"><span className="k">Bidon</span><span className="v">{siparis?.bidon ?? '—'}</span></div>
+        <div className="pc-row"><span className="k">Çuval</span><span className="v">{siparis?.cuval ?? '—'}</span></div>
+        <div className="pc-row"><span className="k">Köy & Adres</span><span className="v sm">{[musteri?.koy, musteri?.adres].filter(Boolean).join(' — ') || '—'}</span></div>
+        <div className="pc-row"><span className="k">İletişim</span><span className="v">{musteri?.tel || '—'}</span></div>
       </div>
-      {takipStr(siparis) && <div className="pc-takip">TAKİP NO: <strong>{takipStr(siparis)}</strong></div>}
-      <div className="pc-foot">
-        <strong>{f.ad}</strong> · {f.tel}<br/>
-        {f.adres}
-      </div>
+      {not && (
+        <div className={'pc-not ' + notBoyut}>
+          <b>Not:</b> {not}
+        </div>
+      )}
     </div>
   )
 }
@@ -269,8 +281,11 @@ function PrintCardRenkli({ firma, musteri, siparis, zeytinTuru, units }) {
   )
 }
 
+// Şimdilik yalnızca Klasik seçilebilir; diğer tasarımlar kodda duruyor (listeye eklenince açılır)
+export var GORUNUR_STILLER = ['klasik']
+
 export default function PrintCard({ stil, ...props }) {
-  var s = stil || 'klasik'
+  var s = GORUNUR_STILLER.indexOf(stil) !== -1 ? stil : 'klasik'
   if (s === 'modern') return <PrintCardModern {...props} />
   if (s === 'termal') return <PrintCardTermal {...props} />
   if (s === 'minimal') return <PrintCardMinimal {...props} />

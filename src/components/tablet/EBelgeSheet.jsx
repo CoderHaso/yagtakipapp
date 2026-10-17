@@ -33,6 +33,10 @@ function ilkForm(tur, h, m, s) {
     tel: m.tel || '', eposta: m.eposta || '',
     miktar: litre ? String(litre) : '', birimFiyat: fiyat ? String(fiyat) : '',
     not: h.not || '', tarih: bugun(), odeme: '', vade: '',
+    birim: h.birim || s.yag || 'lt',
+    // Müstahsil kesintileri (%): varsayılan Ayarlar'dan, bu belge için değiştirilebilir
+    stopaj: String(s.mmStopajOran != null ? s.mmStopajOran : 0), borsa: String(s.mmBorsaOran || 0),
+    mera: String(s.mmMeraOran || 0), sgk: String(s.mmSgkOran || 0),
   }
   if (tur === 'alis') {
     return Object.assign(ortak, {
@@ -64,11 +68,17 @@ export default function EBelgeSheet(props) {
   var no = String(f.kimlikNo || '').replace(/\D/g, '')
   var kt = kimlikTuru(no)
 
+  // Bu belgenin kesinti oranları (formdan); kesintiOranlari() Ayarlar anahtarlarıyla çalışır
+  var kesintiAyar = Object.assign({}, s, {
+    mmStopajOran: Number(f.stopaj) || 0, mmBorsaOran: Number(f.borsa) || 0,
+    mmMeraOran: Number(f.mera) || 0, mmSgkOran: Number(f.sgk) || 0,
+  })
+
   var hesap = useMemo(function () {
     return mm
-      ? mustahsilHesapla(f.miktar, f.birimFiyat, kesintiOranlari(s))
+      ? mustahsilHesapla(f.miktar, f.birimFiyat, kesintiOranlari(kesintiAyar))
       : satisHesapla(f.miktar, f.birimFiyat, s.efKdvOran, s.efKdvDahil !== false)
-  }, [mm, f.miktar, f.birimFiyat, s])
+  }, [mm, f.miktar, f.birimFiyat, s, f.stopaj, f.borsa, f.mera, f.sgk])
 
   // Alıcı e-Fatura mükellefi mi? (satış)
   useEffect(function () {
@@ -116,11 +126,11 @@ export default function EBelgeSheet(props) {
       : { kimlikNo: no, unvan: f.unvan.trim(), adSoyad: kt === 'TCKN' ? f.unvan.trim() : '', vergiDairesi: f.vergiDairesi, adres: f.adres, ilce: f.ilce, il: f.il, tel: f.tel, eposta: f.eposta }
     var ortak = {
       firma: firmaBilgisi(s), urunAd: s.efUrunAd || 'Zeytinyağı',
-      miktar: Number(f.miktar), birim: s.yag || 'lt', birimFiyat: Number(f.birimFiyat),
+      miktar: Number(f.miktar), birim: f.birim || s.yag || 'lt', birimFiyat: Number(f.birimFiyat),
       notlar: [f.not, h.kod ? 'Kayıt: ' + h.kod : ''].filter(Boolean),
     }
     var belge = mm
-      ? Object.assign(ortak, { mustahsil: taraf, kesintiOranlari: kesintiOranlari(s), seri: s.mmSeri || '', teslimTarihi: h.tarih })
+      ? Object.assign(ortak, { mustahsil: taraf, kesintiOranlari: kesintiOranlari(kesintiAyar), seri: s.mmSeri || '', teslimTarihi: h.tarih })
       : Object.assign(ortak, { alici: taraf, kdvOran: Number(s.efKdvOran) || 0, kdvDahil: s.efKdvDahil !== false, profil: s.efProfil, seri: s.efSeri || '', tarih: f.tarih, odeme: f.odeme ? { sekil: f.odeme, vade: f.vade } : null })
     var r = null
     try {
@@ -180,7 +190,7 @@ export default function EBelgeSheet(props) {
 
   var baslik = mm ? 'Müstahsil Makbuzu' : 'Satış Faturası'
   var adimlar = props.akis ? <div className="fab-steps"><i className="on"></i><i className="on"></i><i className="on"></i></div> : null
-  var birim = s.yag || 'lt'
+  var birim = f.birim || s.yag || 'lt'
   function inp(k, label, extra) {
     return (
       <div className={'fab-row' + (extra && extra.wide ? ' wide' : '')}>
@@ -308,7 +318,23 @@ export default function EBelgeSheet(props) {
           )}
           {!mm && no === NIHAI_TUKETICI && <div className="eb-mukellef earsiv">Nihai tüketici → <b>e-Arşiv faturası</b> kesilecek</div>}
 
+          {mm && (
+            <>
+              <h3 className="eb-baslik">Kesintiler (%) — bu makbuz için</h3>
+              <div className="fab-grid">
+                {inp('stopaj', 'GV stopajı %', { attrs: { inputMode: 'decimal' } })}
+                {inp('borsa', 'Borsa tescil ücreti %', { attrs: { inputMode: 'decimal' } })}
+                {inp('mera', 'Mera fonu %', { attrs: { inputMode: 'decimal' } })}
+                {inp('sgk', 'SGK prim kesintisi %', { attrs: { inputMode: 'decimal' } })}
+              </div>
+            </>
+          )}
+
           <h3 className="eb-baslik">Kalem</h3>
+          <div className="fab-seg">
+            <button className={birim === 'lt' ? 'on' : ''} onClick={function () { set('birim', 'lt') }}>Litre (lt)</button>
+            <button className={birim === 'kg' ? 'on' : ''} onClick={function () { set('birim', 'kg') }}>Kilogram (kg)</button>
+          </div>
           <div className="fab-grid">
             <div className="fab-row">
               <label className="fab-label">Miktar ({birim})</label>

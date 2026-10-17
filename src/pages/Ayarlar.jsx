@@ -223,7 +223,7 @@ export default function Ayarlar({ settings, updateSetting, updateMultiple, reset
             <div className="card">
               <div className="card-head"><h3>Varsayılan Kart Stili</h3></div>
               <div className="row" style={{ gap: 8, marginBottom: 20 }}>
-                {['klasik', 'modern', 'termal'].map(s => (
+                {['klasik'].map(s => (
                   <button key={s} onClick={() => updateSetting('cardDefault', s)}
                     className={`btn ${settings.cardDefault === s ? 'primary' : ''}`} style={{ flex: 1, justifyContent: 'center' }}>
                     {s === 'klasik' ? 'Klasik' : s === 'modern' ? 'Modern' : 'Termal'}

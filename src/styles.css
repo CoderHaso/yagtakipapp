@@ -361,43 +361,49 @@ h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 .pc-takip.termal { border-style: solid; border-width: 1px 0; border-radius: 0; }
 
 /* ---- Variant: Klasik ---- */
-.pcard.klasik { --kart-murekkep: #1d3557; }  /* koyu lacivert: saf siyah toner yerine */
+/* Klasik kart: çerçevesiz, düz beyaz zemin. Yazı rengi Ayarlar → Kart yazı rengi (--kart-murekkep).
+   Kâğıdın üst ortasında asmak için delik var: logo yok, üst ortada boşluk bırakılır. */
+:root { --kart-murekkep: #000000; }
 .pcard.klasik {
   background: #fff; color: var(--kart-murekkep);
-  border: 1px solid var(--kart-murekkep);
-  padding: 5mm 5mm 4mm;
+  padding: 14mm 4mm 4mm;
   display: flex; flex-direction: column;
 }
-.pcard.klasik::before {
-  content: ""; position: absolute; inset: 2mm;
-  border: 1px solid var(--kart-murekkep); pointer-events: none;
+.pcard.klasik .pc-tno {
+  position: absolute; top: 3mm; right: 4mm; text-align: right; line-height: 1;
 }
+.pcard.klasik .pc-tno span { display: block; font-size: 8pt; font-weight: 700; letter-spacing: 0.1em; }
+.pcard.klasik .pc-tno strong { display: block; font-size: 19pt; font-weight: 800; margin-top: 0.3mm; }
 .pcard.klasik .pc-brand {
-  text-align: center; padding-bottom: 2mm; border-bottom: 1px solid var(--kart-murekkep);
-  margin-bottom: 2mm; position: relative; z-index: 1;
+  text-align: center; padding-bottom: 2mm; border-bottom: 1.5px solid var(--kart-murekkep);
+  margin-bottom: 2mm; padding-right: 5mm;
 }
-.pcard.klasik .pc-brand .logo {
-  width: 12mm; height: 12mm; margin: 0 auto 1mm;
-  border-radius: 50%; border: 1.5px solid var(--kart-murekkep);
-  display: grid; place-items: center;
-  font-family: "Instrument Serif", Georgia, serif; font-size: 18pt; color: var(--kart-murekkep);
-}
-.pcard.klasik .pc-brand .name { font-weight: 700; font-family: "Instrument Serif", Georgia, serif; font-size: 15pt; line-height: 1; }
-.pcard.klasik .pc-brand .sub { font-size: 7pt; color: var(--kart-murekkep); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 1mm; }
-.pcard.klasik .pc-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1mm; position: relative; z-index: 1; }
-.pcard.klasik .pc-row { display: grid; grid-template-columns: 28mm 1fr; align-items: baseline; gap: 2mm; }
-.pcard.klasik .pc-row .k { font-weight: 700; font-size: 7.5pt; color: var(--kart-murekkep); letter-spacing: 0.04em; }
+.pcard.klasik .pc-brand .name { font-weight: 700; font-family: "Instrument Serif", Georgia, serif; font-size: 16pt; line-height: 1; }
+.pcard.klasik .pc-brand .sub { font-size: 8pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1mm; }
+.pcard.klasik .pc-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.9mm; }
+.pcard.klasik .pc-row { display: grid; grid-template-columns: 27mm 1fr; align-items: baseline; gap: 2mm; }
+.pcard.klasik .pc-row .k { font-weight: 700; font-size: 8.5pt; letter-spacing: 0.02em; }
 .pcard.klasik .pc-row .v {
-  font-family: "Instrument Serif", Georgia, serif; font-size: 10pt; color: var(--kart-murekkep);
-  border-bottom: 1px dotted var(--kart-murekkep); padding-bottom: 0.5mm; min-height: 4mm;
+  font-family: "Instrument Serif", Georgia, serif; font-size: 11.5pt; font-weight: 600;
+  border-bottom: 1px dotted var(--kart-murekkep); padding-bottom: 0.4mm; min-height: 4.2mm; line-height: 1.1;
 }
-.pcard.klasik .pc-row .v.big { font-size: 12pt; font-weight: 700; }
-.pcard.klasik .pc-foot {
-  flex-shrink: 0; margin-top: 1.5mm; padding-top: 1.5mm; border-top: 1px solid var(--kart-murekkep);
-  text-align: center; font-size: 6.5pt; color: var(--kart-murekkep); line-height: 1.4;
-  position: relative; z-index: 1;
+.pcard.klasik .pc-row .v.big { font-size: 14pt; font-weight: 800; }
+.pcard.klasik .pc-row .v.sm { font-size: 10pt; }
+.pcard.klasik .pc-not {
+  flex-shrink: 0; margin-top: 1.5mm; padding-top: 1.5mm; border-top: 1.5px solid var(--kart-murekkep);
+  font-size: 10pt; line-height: 1.25; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere;
+  max-height: 34mm; overflow: hidden;
 }
-.pcard.klasik .pc-foot strong { font-weight: 700; }
+.pcard.klasik .pc-not.sm { font-size: 8.5pt; }
+.pcard.klasik .pc-not.xs { font-size: 7.5pt; line-height: 1.2; max-height: 26mm; }
+.pcard.klasik.sik1 .pc-row .v { font-size: 10.5pt; }
+.pcard.klasik.sik1 .pc-row .v.big { font-size: 12.5pt; }
+.pcard.klasik.sik1 .pc-rows { gap: 0.6mm; }
+.pcard.klasik.sik2 .pc-row .v { font-size: 9.5pt; min-height: 3.6mm; }
+.pcard.klasik.sik2 .pc-row .v.big { font-size: 11pt; }
+.pcard.klasik.sik2 .pc-row .k { font-size: 7.5pt; }
+.pcard.klasik.sik2 .pc-rows { gap: 0.3mm; }
+.pcard.klasik.sik2 .pc-brand { padding-bottom: 1mm; margin-bottom: 1mm; }
 
 /* ---- Variant: Modern Minimal ---- */
 .pcard.modern {
@@ -1176,6 +1182,10 @@ h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 }
 .fab-sheet-head h2 { font-family: var(--font-display); font-size: 26px; font-weight: 400; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fab-sheet-sub { font-size: 14px; color: var(--ink-3); margin-left: auto; white-space: nowrap; }
+.fab-sheet-sub.belirgin { font-size: 18px; color: var(--ink); font-weight: 600; }
+.fab-sheet-sub.belirgin b { font-size: 22px; font-weight: 800; color: #000; }
+.fab-not-satir { display: flex; gap: 8px; align-items: flex-start; }
+.fab-textarea { flex: 1; height: auto; min-height: 84px; padding: 10px 12px; resize: vertical; font-family: inherit; line-height: 1.35; }
 .fab-steps { display: flex; gap: 6px; margin-left: auto; }
 .fab-steps i { width: 28px; height: 6px; border-radius: 3px; background: var(--line); }
 .fab-steps i.on { background: var(--accent); }
@@ -1573,3 +1583,16 @@ h3 .eb-durum { margin-left: 10px; vertical-align: middle; font-family: var(--fon
 .np-dock-alt { display: flex; gap: 8px; }
 .np-dock-alt .fab-btn { flex: 1; height: 52px; }
 body.np-acik .fab-sheet { right: 320px; }
+
+/* Küçük köşe yazıları: koyu ve kalın (göz yorgunluğu için), genel tasarım aynı */
+.fab-stat span, .fab-ip, .fc-meta, .fc-num span, .fab-tile-meta, .fab-picked-meta,
+.fab-field span, .fab-calc span, .fab-kv span, .fab-label, .eb-not,
+.eb-sk-ana span, .hk-s-kim span, .hk-s-sayi span, .fab-sheet-sub, .lo-kutu span,
+.mh-baslik, .kol-aralik button, .alt-sekme em {
+  color: var(--ink-2); font-weight: 600; opacity: 1;
+}
+.fab-stat span, .fc-num span, .fab-calc span, .fab-kv span, .hk-s-sayi span, .lo-kutu span { font-size: 12px; }
+.fc-meta, .fab-tile-meta, .eb-sk-ana span, .hk-s-kim span, .fab-ip { font-size: 13px; }
+.fab-label, .fab-field span { font-size: 13px; }
+.eb-not, .fab-picked-meta { font-size: 14px; }
+.fab-hint.sm { color: var(--ink-2); font-weight: 600; }

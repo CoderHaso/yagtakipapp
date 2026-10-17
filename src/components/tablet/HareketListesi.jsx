@@ -97,6 +97,7 @@ export default function HareketListesi(props) {
         {liste.map(function (h) {
           var m = h.musteriId ? props.musteriMap[h.musteriId] : null
           var litre = Math.abs(Number(h.litre) || 0)
+          var hb = h.birim || birim
           return (
             <div key={h.id} className={'hk-satir ' + (h.resmi ? 'resmi' : 'gayri')}>
               <div className="fc-av">{m ? initialsOf(m.ad) : <Icon name="swap" size={18} />}</div>
@@ -104,8 +105,8 @@ export default function HareketListesi(props) {
                 <b>{m ? m.ad : 'Müşterisiz'}</b>
                 <span>{fmt.date(h.tarih)}{h.saat ? ' · ' + h.saat : ''}{h.kod ? ' · ' + h.kod : ''}{h.not ? ' · ' + h.not : ''}</span>
               </div>
-              <div className="hk-s-sayi"><b>{fmt.num(litre, 1)}</b><span>{birim}</span></div>
-              <div className="hk-s-sayi">{h.kgFiyat ? <><b>{fmt.num(h.kgFiyat, 0)}</b><span>{para}/{birim}</span></> : null}</div>
+              <div className="hk-s-sayi"><b>{fmt.num(litre, 1)}</b><span>{hb}</span></div>
+              <div className="hk-s-sayi">{h.kgFiyat ? <><b>{fmt.num(h.kgFiyat, 0)}</b><span>{para}/{hb}</span></> : null}</div>
               <div className="hk-s-sayi tutar">{h.tutar ? <><b>{fmt.num(h.tutar, 0)}</b><span>{para}</span></> : null}</div>
               <span className={'hk-rozet ' + (h.resmi ? 'resmi' : 'gayri')}>{h.resmi ? 'RESMİ' : 'RESMİ DEĞİL'}</span>
               <div className="hk-s-islem">

@@ -21,6 +21,7 @@ export default function HareketSheet(props) {
   var [field, setField] = useState('litre')
   var [resmi, setResmi] = useState(true)
   var [not, setNot] = useState('')
+  var [birim, setBirim] = useState(props.settings.yag || 'lt')   // bu işlemin birimi: kg | lt
 
   var nq = normalize(q)
   var list = nq ? props.customers.filter(function (m) { return normalize(m.ad).indexOf(nq) !== -1 }) : props.customers
@@ -30,7 +31,6 @@ export default function HareketSheet(props) {
   var litreNum = Number(litre) || 0
   var fiyatNum = Number(fiyat) || 0
   var tutar = +(litreNum * fiyatNum).toFixed(2)
-  var birim = props.settings.yag || 'lt'
   var para = props.settings.currency || '₺'
 
   // Satışta stok yetiyor mu?
@@ -46,7 +46,7 @@ export default function HareketSheet(props) {
       musteriId: picked && picked.id ? picked.id : null,
       yeniAd: picked && picked.yeniAd ? picked.yeniAd : '',
       litre: litreNum, kgFiyat: fiyatNum || null, tutar: tutar || null,
-      resmi: resmi, not: not,
+      resmi: resmi, not: not, birim: birim,
     })
   }
 
@@ -126,13 +126,18 @@ export default function HareketSheet(props) {
                 : 'Sadece kendi kaydımız · kayıt dışı stok'}
             </p>
 
+            <div className="fab-seg big">
+              <button className={birim === 'lt' ? 'on' : ''} onClick={function () { setBirim('lt') }}>Litre (lt)</button>
+              <button className={birim === 'kg' ? 'on' : ''} onClick={function () { setBirim('kg') }}>Kilogram (kg)</button>
+            </div>
+
             <div className="fab-fields">
               <button className={'fab-field' + (field === 'litre' ? ' on' : '')} onClick={function () { setField('litre') }}>
                 <span>Miktar</span>
                 <b>{litre || '0'}<i>{birim}</i></b>
               </button>
               <button className={'fab-field sm' + (field === 'fiyat' ? ' on' : '')} onClick={function () { setField('fiyat') }}>
-                <span>Birim fiyat</span>
+                <span>Birim fiyat (₺/{birim})</span>
                 <b>{fiyat || '–'}<i>{para}</i></b>
               </button>
             </div>

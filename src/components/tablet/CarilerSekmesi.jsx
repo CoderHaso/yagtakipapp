@@ -5,8 +5,9 @@ import Icon from '../Icon'
 
 // ─────────────────────────────────────────────────────────────
 // CARİLER — müşteri / firma / müstahsil kayıtları
-//   Fatura Kesilenler     : yağ satışı yapılan cariler
+//   Zeytin Alınanlar      : zeytin kabul kartı olan cariler
 //   Müstahsil Kesilenler  : yağ alınan (e-Müstahsil) cariler
+//   Fatura Kesilenler     : yağ satışı yapılan cariler
 //   Tüm Cariler           : hareketi olmayanlar dahil hepsi
 // Her cari: Firma (VKN) mı Şahıs (TCKN) mı rozetle görünür; ekle / düzenle / sil.
 // ─────────────────────────────────────────────────────────────
@@ -16,8 +17,9 @@ var BOS = {
   adres: '', ilce: '', il: '', koy: '', notlar: '',
 }
 var ALT = [
-  { id: 'fatura', ad: 'Fatura Kesilenler', icon: 'coin' },
+  { id: 'zeytin', ad: 'Zeytin Alınanlar', icon: 'list' },
   { id: 'mm', ad: 'Müstahsil Kesilenler', icon: 'download' },
+  { id: 'fatura', ad: 'Fatura Kesilenler', icon: 'coin' },
   { id: 'tumu', ad: 'Tüm Cariler', icon: 'users' },
 ]
 
@@ -57,7 +59,8 @@ export default function CarilerSekmesi(props) {
 
   var nq = q.trim().toLocaleLowerCase('tr-TR')
   var liste = (props.musteriler || []).filter(function (m) {
-    var o = ozet[m.id] || { fatura: 0, mm: 0 }
+    var o = ozet[m.id] || { fatura: 0, mm: 0, kart: 0 }
+    if (alt === 'zeytin' && !o.kart) return false
     if (alt === 'fatura' && !o.fatura) return false
     if (alt === 'mm' && !o.mm) return false
     if (!nq) return true

@@ -6,6 +6,7 @@ const DEFAULTS = {
   palette: 'toprak',
   density: 1,
   cardDefault: 'klasik',
+  kartRenk: 'siyah',           // siyah | lacivert (siyah kartuş bitince)
   agirlik: 'kg',
   yag: 'lt',
   currency: '₺',
@@ -67,6 +68,11 @@ function loadLocal() {
 export function useSettings() {
   var [settings, setSettings] = useState(loadLocal)
   var skipSync = useRef(false)
+
+  // Kart yazı rengi tüm sayfalarda (tablet + panel) aynı CSS değişkeninden gelir
+  useEffect(function () {
+    document.documentElement.style.setProperty('--kart-murekkep', settings.kartRenk === 'lacivert' ? '#1d3557' : '#000000')
+  }, [settings.kartRenk])
 
   useEffect(function () {
     var unsub = onSnapshot(SETTINGS_DOC, function (snap) {

@@ -12,6 +12,9 @@ function takipStr(s) {
   return s && s.takipNo ? String(s.takipNo) : null
 }
 
+// Kart notunun azami uzunluğu (karakter) — en küçük yazı kademesinde bile karta sığan üst sınır
+export var KART_NOT_LIMIT = 350
+
 function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
   var u = units || { agirlik: 'kg', yag: 'lt' }
   var f = firma || FIRMA
@@ -19,11 +22,12 @@ function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
   // Hak yağı oranı: işlemde saklıysa o, değilse miktarlardan hesaplanır
   var hakOran = siparis && siparis.hakYagOran != null ? Number(siparis.hakYagOran)
     : (siparis && siparis.cikanYag > 0 && siparis.hakYagKg != null ? +(siparis.hakYagKg / siparis.cikanYag * 100).toFixed(1) : null)
-  var not = siparis && siparis.not ? String(siparis.not).trim() : ''
-  // Uzun notlar küçülerek sığar (satırlar kayar, taşmaz)
-  var notBoyut = not.length > 220 ? 'xs' : not.length > 110 ? 'sm' : ''
+  var not = siparis && siparis.not ? String(siparis.not).trim().slice(0, KART_NOT_LIMIT) : ''
+  // Uzun notlar küçülerek sığar (satırlar kayar, taşmaz). Eşikler 70x140mm kartta ölçülerek
+  // belirlendi: her kademede kartın altında en az ~5mm boşluk kalır.
+  var notBoyut = not.length > 150 ? 'xs' : not.length > 110 ? 'sm' : ''
   // Not uzadıkça kartın geri kalanı da biraz sıkışır ki hepsi 140mm'ye sığsın
-  var sik = not.length > 220 ? ' sik2' : not.length > 110 ? ' sik1' : ''
+  var sik = not.length > 150 ? ' sik2' : not.length > 110 ? ' sik1' : ''
   return (
     <div className={'pcard klasik' + sik}>
       {tno && (
@@ -41,7 +45,7 @@ function PrintCardKlasik({ firma, musteri, siparis, zeytinTuru, units }) {
         <div className="pc-row"><span className="k">Zeytin (Kg)</span><span className="v big">{fmt.num(siparis?.zeytinKg, 0)}</span></div>
         <div className="pc-row"><span className="k">Zeytin Türü</span><span className="v">{zeytinTuru?.ad || '—'}</span></div>
         <div className="pc-row"><span className="k">Çıkan Yağ</span><span className="v big">{fmt.num(siparis?.cikanYag, 1)} {u.yag}</span></div>
-        <div className="pc-row"><span className="k">Hak Yağı</span><span className="v">{fmt.num(siparis?.hakYagKg, 1)} {u.yag}{hakOran != null && !isNaN(hakOran) ? ' (%' + fmt.num(hakOran, hakOran % 1 ? 1 : 0) + ')' : ''}</span></div>
+        <div className="pc-row"><span className="k">Hak Yağı{hakOran != null && !isNaN(hakOran) ? ' (%' + fmt.num(hakOran, hakOran % 1 ? 1 : 0) + ')' : ''}</span><span className="v">{fmt.num(siparis?.hakYagKg, 1)} {u.yag}</span></div>
         <div className="pc-row"><span className="k">Kalan Yağ</span><span className="v big">{fmt.num(siparis?.kalanYagKg, 1)} {u.yag}</span></div>
         <div className="pc-row"><span className="k">Verim (kg/kg)</span><span className="v">{verimStr(siparis)}</span></div>
         <div className="pc-row"><span className="k">Asit (Dizem)</span><span className="v">{fmt.num(siparis?.asit, 2)}</span></div>

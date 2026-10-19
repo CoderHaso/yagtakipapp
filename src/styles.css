@@ -391,11 +391,10 @@ h1, h2, h3, h4 { font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
 .pcard.klasik .pc-row .v.sm { font-size: 10pt; }
 .pcard.klasik .pc-not {
   flex-shrink: 0; margin-top: 2.5mm; padding-top: 2mm; border-top: 1.5px solid var(--kart-murekkep);
-  font-size: 10pt; line-height: 1.25; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere;
-  max-height: 34mm; overflow: hidden;
+  font-size: 10pt; line-height: 1.25; font-weight: 600; white-space: normal; overflow-wrap: anywhere;
 }
 .pcard.klasik .pc-not.sm { font-size: 8.5pt; }
-.pcard.klasik .pc-not.xs { font-size: 7.5pt; line-height: 1.2; max-height: 26mm; }
+.pcard.klasik .pc-not.xs { font-size: 7.5pt; line-height: 1.2; }
 .pcard.klasik.sik1 .pc-row .v { font-size: 10.5pt; }
 .pcard.klasik.sik1 .pc-row .v.big { font-size: 12.5pt; }
 .pcard.klasik.sik1 .pc-rows { gap: 0.6mm; }

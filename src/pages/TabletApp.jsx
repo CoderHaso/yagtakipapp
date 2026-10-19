@@ -14,7 +14,7 @@ import { uyumsoft } from '../lib/uyumsoft'
 import { ZEYTIN_TURLERI, KOYLER, FIRMA } from '../lib/constants'
 import { fmt, initialsOf } from '../lib/fmt'
 import VoiceInput from '../components/VoiceInput'
-import PrintCard, { GORUNUR_STILLER } from '../components/PrintCard'
+import PrintCard, { GORUNUR_STILLER, KART_NOT_LIMIT } from '../components/PrintCard'
 import Icon from '../components/Icon'
 import NumpadDock from '../components/tablet/NumpadDock'
 import CarilerSekmesi from '../components/tablet/CarilerSekmesi'
@@ -1170,10 +1170,11 @@ function YagSheet(props) {
           <div className="fab-row">
             <label className="fab-label">Not (karta yazdırılır)</label>
             <div className="fab-not-satir">
-              <textarea className="fab-input fab-textarea" rows={3} value={not} placeholder="İsteğe bağlı · klavyeyi açmadan mikrofona basıp söyleyebilirsin"
+              <textarea className="fab-input fab-textarea" rows={3} value={not} maxLength={KART_NOT_LIMIT} placeholder="İsteğe bağlı · klavyeyi açmadan mikrofona basıp söyleyebilirsin"
                 onChange={function (e) { setNot(e.target.value) }} />
-              <VoiceInput onResult={function (v) { setNot(function (p) { return (p ? p + ' ' : '') + v }) }} />
+              <VoiceInput onResult={function (v) { setNot(function (p) { return ((p ? p + ' ' : '') + v).slice(0, KART_NOT_LIMIT) }) }} />
             </div>
+            <span className="fab-ip">{not.length} / {KART_NOT_LIMIT} karakter · karta sığacak en uzun not</span>
           </div>
         </div>
         <div className="fab-pad">
@@ -1251,7 +1252,7 @@ function DetaySheet(props) {
           )}
           <div className="fab-row"><label className="fab-label">Köy</label><input className="fab-input" list="fab-koy2" value={f.koy} onChange={function (e) { set('koy', e.target.value) }} /><datalist id="fab-koy2">{KOYLER.map(function (k) { return <option key={k} value={k} /> })}</datalist></div>
           <div className="fab-row"><label className="fab-label">Telefon</label><input className="fab-input" type="tel" value={f.tel} onChange={function (e) { set('tel', e.target.value) }} /></div>
-          <div className="fab-row wide"><label className="fab-label">Not</label><input className="fab-input" value={f.not} onChange={function (e) { set('not', e.target.value) }} /></div>
+          <div className="fab-row wide"><label className="fab-label">Not (karta yazdırılır · en çok {KART_NOT_LIMIT} karakter)</label><input className="fab-input" maxLength={KART_NOT_LIMIT} value={f.not} onChange={function (e) { set('not', e.target.value) }} /></div>
         </div>
         <div className="fab-actions">
           <button className="fab-btn primary" disabled={props.busy} onClick={save}><Icon name="check" size={22} /> Kaydet</button>
@@ -1497,7 +1498,7 @@ function SiparisDetay(props) {
           {done && <div className="fab-row"><label className="fab-label">Çıkan yağ (kg)</label><input className="fab-input" type="text" inputMode="decimal" value={f.cikanYag} onChange={function (e) { set('cikanYag', e.target.value) }} /></div>}
           {done && <div className="fab-row"><label className="fab-label">Asit</label><input className="fab-input" type="text" inputMode="decimal" value={f.asit} onChange={function (e) { set('asit', e.target.value) }} /></div>}
           {done && <div className="fab-row"><label className="fab-label">Bidon</label><input className="fab-input" type="text" inputMode="numeric" value={f.bidon} onChange={function (e) { set('bidon', e.target.value) }} /></div>}
-          <div className="fab-row wide"><label className="fab-label">Not</label><input className="fab-input" value={f.not} onChange={function (e) { set('not', e.target.value) }} /></div>
+          <div className="fab-row wide"><label className="fab-label">Not (karta yazdırılır · en çok {KART_NOT_LIMIT} karakter)</label><input className="fab-input" maxLength={KART_NOT_LIMIT} value={f.not} onChange={function (e) { set('not', e.target.value) }} /></div>
         </div>
       )}
       <div className="fab-actions">

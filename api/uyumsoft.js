@@ -97,6 +97,50 @@ function taslakSonuc(r) {
   return { tamam: true, mesaj: r.attrs.Message || '' }
 }
 
+// ── Belge numarası (seri + yıl + 9 haneli sayaç, örn. ABC2026000000004) ──
+// Sayacı Uyumsoft'a bırakmayız: taslak açıp silince numara "yanıyordu". Burada
+// yalnızca GERÇEKTEN resmileşmiş (taslak / hatalı / iptal edilmiş taslak olmayan) en son
+// belgeye bakılır, +1 verilir. Yıl değişince sayaç 1'den başlar. Bekleyen taslakların
+// numaraları atlanır ki iki taslak aynı numarayı almasın.
+var NO_BICIM = /^([A-Za-z0-9]{3})(\d{4})(\d{9})$/
+var HARCANMAYAN = ['Draft', 'Canceled', 'Error', 'Deleted', 'NotPrepared', 'NotSend']
+
+function sonrakiNoHesapla(items, seri, yil) {
+  var prefix = /^[A-Za-z0-9]{3}$/.test(seri || '') ? String(seri).toUpperCase() : ''
+  var parsed = items.map(function (i) {
+    var m = NO_BICIM.exec(i.no || '')
+    return m ? { pre: m[1].toUpperCase(), yil: m[2], sayi: Number(m[3]), durum: i.durum } : null
+  }).filter(Boolean)
+  if (!prefix) {   // seri ayarı boşsa en son kullanılan seriyi izle
+    var son = parsed.find(function (x) { return HARCANMAYAN.indexOf(x.durum) === -1 }) || parsed[0]
+    prefix = son ? son.pre : ''
+  }
+  if (!prefix) return ''     // hiç belge yok ve seri yok → Uyumsoft varsayılanı atasın
+  var harcanan = 0, bekleyen = {}
+  parsed.forEach(function (x) {
+    if (x.pre !== prefix || x.yil !== String(yil)) return
+    if (x.durum === 'Draft') bekleyen[x.sayi] = true
+    else if (HARCANMAYAN.indexOf(x.durum) === -1 && x.sayi > harcanan) harcanan = x.sayi
+  })
+  var n = harcanan + 1
+  while (bekleyen[n]) n++
+  return prefix + String(yil) + String(n).padStart(9, '0')
+}
+
+// d.seri: 3 harfli önek (veya boş). Tam numara (16 hane) verilmişse aynen kullanılır.
+async function belgeNo(cfg, tip, seri, tarih, senaryo) {
+  if (NO_BICIM.test(seri || '')) return seri
+  try {
+    var yil = String(tarih).slice(0, 4)
+    var liste = tip === 'mm'
+      ? await ISLEMLER.mmListe(cfg, { boyut: 100 })
+      : await ISLEMLER.faturaListe(cfg, { kutu: 'giden', boyut: 100 })
+    var items = liste.items
+    if (tip !== 'mm' && senaryo) items = items.filter(function (i) { return !i.senaryo || i.senaryo === senaryo })
+    return sonrakiNoHesapla(items, seri, yil)
+  } catch (e) { return seri || '' }   // liste alınamazsa Uyumsoft kendi numarasını versin
+}
+
 // ── İşlemler ──
 var ISLEMLER = {
   async durum(cfg) {
@@ -155,7 +199,8 @@ var ISLEMLER = {
     if (!(num(d.miktar) > 0) || !(num(d.birimFiyat) > 0)) throw new UyumsoftHata('Miktar ve birim fiyat sıfırdan büyük olmalı', 'GIRDI')
     var now = trNow()
     var id = uuid()
-    var built = buildReceipt(Object.assign({}, d, { uuid: id, tarih: now.tarih, saat: now.saat, id: d.seri || '' }))
+    var no = await belgeNo(cfg, 'mm', d.seri, now.tarih)
+    var built = buildReceipt(Object.assign({}, d, { uuid: id, tarih: now.tarih, saat: now.saat, id: no }))
     var body = '<receipts><ProducerReceiptInfo>' +
       '<LocalDocumentId xmlns="urn:names:myinvoice:producerreceipt">' + esc(b.yerelId || '') + '</LocalDocumentId>' +
       built.xml +
@@ -256,7 +301,8 @@ var ISLEMLER = {
       tarih = d.tarih
     }
     var id = uuid()
-    var built = buildInvoice(Object.assign({}, d, { uuid: id, tarih: tarih, saat: now.saat, profil: profil, id: d.seri || '' }))
+    var faturaNo = await belgeNo(cfg, 'fatura', d.seri, tarih, senaryo)
+    var built = buildInvoice(Object.assign({}, d, { uuid: id, tarih: tarih, saat: now.saat, profil: profil, id: faturaNo }))
     var unvan = d.alici.unvan || d.alici.adSoyad || ''
     var info = '<InvoiceInfo LocalDocumentId="' + esc(b.yerelId || '') + '">' +
       built.xml +
